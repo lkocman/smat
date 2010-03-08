@@ -1,0 +1,36 @@
+#
+# TODO
+#
+
+complete list of object attributes:
+	in progress
+
+object loader:
+	load text
+	load number
+	load boolean
+	load list
+	load ghost
+
+object depenencies:
+	solve blocking objects
+	solve object dependencies
+	solve package dependencies (bonus)
+	solve rbac dependencies (bonus)
+
+working interpret:
+	complete list of object attributes
+	object loader
+	object depenencies
+	file parser
+	command generation
+
+curses gui:
+	to be planned
+
+main tasks:
+		working interpret
+		working curses gui
+		user management screen files
+		command execution
+

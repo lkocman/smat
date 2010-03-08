@@ -1,0 +1,9 @@
+#
+# mmenu - Default smat path
+#
+
+
+scr_obj {
+	type = link
+	id = "mmenu"
+}
