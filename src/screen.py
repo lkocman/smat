@@ -60,6 +60,9 @@ class screen:
 		pass
 
 #---------------------------------------------------------------------------
+	def get_match(list1 list2):
+			for x in 
+#---------------------------------------------------------------------------
 	def check_dependencies(self):
 		"""check_dependencies(). This method browses creates list of dependencies
 		and returns list of missing screen_obj.id's"""

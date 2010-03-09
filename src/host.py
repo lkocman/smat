@@ -35,7 +35,7 @@ class host:
 	smat_def_path = "/usr/share/smat/fpaths"
 	ERROR_4 = "Error 4: Your system is not currently supported.\
 Currently are supported only: %s Exiting."
-#-------------------------------------------------------------------------------
+#---------------------------------------------------------------------------
 
 	def __init__(self):
 		self.get_smat_home()
@@ -52,7 +52,7 @@ Currently are supported only: %s Exiting."
 			print host.ERROR_4 % (lst)
 			sys.exit(4)
 
-#-------------------------------------------------------------------------------
+#---------------------------------------------------------------------------
 
 	def get_utsname(self):
 		"get_utsname()"
@@ -63,7 +63,7 @@ Currently are supported only: %s Exiting."
 		self.platform = utsname[4] # uname -i
 		del(utsname)
 
-#-------------------------------------------------------------------------------
+#---------------------------------------------------------------------------
 
 	def get_smat_home(self):
 		self.smat_home = os.getenv(host.smat_home_var, default = None)
@@ -74,28 +74,28 @@ Currently are supported only: %s Exiting."
 			else:
 				raise sm_host_exception(sm_host_exception.ERROR_1)
 
-#-------------------------------------------------------------------------------
+#---------------------------------------------------------------------------
 
 	def check_pkg(self, fmri):
 		"""check_pkg(fmri)"""
 		return True
 
-#-------------------------------------------------------------------------------
+#---------------------------------------------------------------------------
 
 class sm_host_exception(Exception):
 	ERROR_1 = "Error 1: Unable to get valid smat home. Neither $SMAT_HOME \
 or " + host.smat_def_path + " exists. Exiting."
 
-#-------------------------------------------------------------------------------
+#---------------------------------------------------------------------------
 
 	def __init__(self, msg):
 		self.value = msg
 
-#-------------------------------------------------------------------------------
+#---------------------------------------------------------------------------
 
 	def __str__(self):
 		return repr(self.value)
 
-#-------------------------------------------------------------------------------
+#---------------------------------------------------------------------------
 
 host_info = host()
