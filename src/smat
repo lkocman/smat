@@ -27,7 +27,7 @@ Use is subject to license terms.
 
 # smat - System Modular Administration Tool utility
 
-import sys
+import sys, os 
 from host import host_info
 from screen import *
 
@@ -52,7 +52,7 @@ class smat:
 				self.list_fpaths()
 			else:
 				self.cur_scr = screen(host_info, sys.argv[1])
-				self.cur_src.start_text_interface()
+				self.cur_scr.start_text_interface()
 
 #-------------------------------------------------------------------------------
 
@@ -71,7 +71,11 @@ class smat:
 #-------------------------------------------------------------------------------
 
 	def list_fpaths(self):
-		pass
+		fpaths=os.listdir(host_info.smat_home)
+		fpaths.sort()
+
+		for fpath in fpaths:
+			print fpath
 
 #-------------------------------------------------------------------------------
 

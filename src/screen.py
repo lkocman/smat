@@ -37,7 +37,10 @@ class screen:
 
 	ERROR_5 = "Error 5: Unexpected error during creating dependency list."
 	ERROR_6 = "Error 6: Dependency/Blocking problem."
-	ERROR_7 = "Error 7: Fast path %s does not exist. Exiting"
+	ERROR_6_1 = " Object <%s> can't block itself."
+	ERROR_6_2 = " Mandatory object <%s> can't be set as blocking."
+	ERROR_6_2 = " y object <%s> can't be set as blocking."
+	ERROR_7 = "Error 7: Fast path <%s> does not exist. Exiting"
 #-------------------------------------------------------------------------------
 
 	def __init__(self, host_info, fpath):
@@ -48,7 +51,7 @@ class screen:
 		self.type = None
 		self.url = os.path.join(host_info.smat_home, fpath)
 		self.pkg_dep = []
-		self.objects = []
+		self.objects = {}
 		self.obj_count = 0
 
 #---------------------------------------------------------------------------
@@ -60,18 +63,22 @@ class screen:
 		pass
 
 #---------------------------------------------------------------------------
-	def get_match(list1 list2):
-			for x in 
+
+	def is_mandatory_by_id(self,id):
+		"""Function returns if object with specified id is mandatory"""
+		return self.objects[obj.id].mandatory
+				
 #---------------------------------------------------------------------------
+
 	def check_dependencies(self):
 		"""check_dependencies(). This method browses creates list of dependencies
 		and returns list of missing screen_obj.id's"""
-		ids = []
+		ids = [] # All obj id's that user selected to process 
 		blocking = {}
 		dependencies = {}
 
-		for obj in self.objects:
-		
+		for o in self.objects:
+			obj = self.objects[o]	
 			# Only if user specified value, or ghost objects
 			if obj.value != None or obj.type == screen_obj.t_ghost:
 				ids.append(obj.id)
@@ -79,8 +86,15 @@ class screen:
 				# Blockers are indexed by what object is blocked "obj.blocking"
 				if len(obj.blocking) > 0 :
 					for bl in obj.blocking:
+						if bl == obj.id:
+							raise dependency_exception(screen.ERROR_6 + screen.ERROR_6_1 % (obj.id))
+
+						if is_mandatory_by_id(bl):
+							raise dependency_exception(screen.ERROR_6 + screen.ERROR_6_2 % (bl))
+
 						if not blocking.has_key(bl):
 							blocking[bl] = [obj.id]
+
 						else:
 							blocking[bl].append(obj.id)
 
@@ -89,12 +103,6 @@ class screen:
 				if len(obj.dependency) > 0:
 					dependencies[obj.id] = obj.dependency
 
-			print "# %s --------------------------------" % (obj.id)
-			print "Dependencies"
-			print obj.dependency
-			print "Blocking"
-			print obj.blocking
-			
 		# Possible TODO: in case of any dependency/blocking problems
 		# I recommend to print a tree of dependencies/blockers for given
 		# case
@@ -107,7 +115,7 @@ class screen:
 		print dependencies	
 		print "Blocking"
 		print blocking
-		print "IDs"
+		print "active IDs"
 		print ids
 
 		# Following code needs to be optimalized
@@ -128,7 +136,6 @@ class screen:
 		"""This method is launching curses based interface. """
 		self.read_objects()
 		self.check_dependencies() # This will invoked by user in future
-		print "Text interface executed"
 
 #-------------------------------------------------------------------------------
 
@@ -144,7 +151,7 @@ class screen:
 			sobj.autoid=self.obj_count
 			self.obj_count = self.obj_count + 1
 			sobj.check()
-			self.objects.append(sobj)
+			self.objects[sobj.id] = sobj
 
 		except sobj_exception as se:
 			print se
@@ -173,8 +180,7 @@ class screen:
 		testobj2.id = "id2"
 		testobj2.type = screen_obj.t_text
 		testobj2.label = "Test id 2"
-		testobj2.dependency = [ "id4" ]
-		testobj2.blocking = [ "id4" ]
+		testobj2.dependency = [ "id1" ]
 		testobj2.value = "test string"
 
 		testobj3 = screen_obj()
@@ -182,7 +188,7 @@ class screen:
 		testobj3.type = screen_obj.t_list
 		testobj3.list_separator = ","
 		testobj3.label = "Test id 3"
-		testobj3.blocking = [ "id2" ]
+		testobj3.blocking = [ "id1" ]
 		
 		testobj4 = screen_obj()
 		testobj4.id = "id4"
@@ -277,8 +283,11 @@ necessary data."""
 
 
 		except sobj_exception as se:
-			print se
-			sys.exit(2)
+			if self.__fatal__:
+				print se
+				sys.exit(2)
+			else:
+				print se # This should be viewed later in the text/gtk interface
 
 #-------------------------------------------------------------------------------
 
@@ -299,8 +308,9 @@ class sobj_exception(Exception):
 class dependency_exception(Exception):
 #-------------------------------------------------------------------------------
 
-	def __init__(self, msg):
+	def __init__(self, msg, fatal=False):
 		self.value = msg
+		self.__fatal__ = fatal
 
 #-------------------------------------------------------------------------------
 
