@@ -33,24 +33,11 @@ class host:
 	SUPPORTED_OS = [ "SunOS" ] # Maybe OracleOS in future ;-)
 	smat_home_var = "SMAT_HOME"
 	smat_def_path = "/usr/share/smat/fpaths"
-	ERROR_4 = "Error 4: Your system is not currently supported.\
-Currently are supported only: %s Exiting."
 #---------------------------------------------------------------------------
 
 	def __init__(self):
 		self.get_smat_home()
 		self.get_utsname()
-
-		try:
-			host.SUPPORTED_OS.index(self.os_name)
-
-		except ValueError:
-			lst=""
-			for supos in host.SUPPORTED_OS:
-				lst = lst + (supos + ", ")
-
-			print host.ERROR_4 % (lst)
-			sys.exit(4)
 
 #---------------------------------------------------------------------------
 
