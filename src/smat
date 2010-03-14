@@ -27,14 +27,10 @@ Use is subject to license terms.
 
 # smat - System Modular Administration Tool utility
 
-import sys, os 
+import sys
 from smat import smat
-from host import host_info
-from screen import *
-
-#-------------------------------------------------------------------------------
 
 
 if __name__ == "__main__":
-	smat_inst = smat(smat.m_text)
+	smat_inst = smat(smat.m_auto)
 	sys.exit(0)

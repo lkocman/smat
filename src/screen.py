@@ -134,6 +134,7 @@ class screen:
 
 	def start_text_interface(self):
 		"""This method is launching curses based interface. """
+		print "Starting text interface"
 		self.read_objects()
 		self.check_dependencies() # This will invoked by user in future
 
@@ -141,7 +142,7 @@ class screen:
 
 	def start_gtk_interface(self):
 		"""This method is launching gtk intefrace for smat. """
-		self.start_gtk_interface() # TODO: gtk interface is planned
+		print "Gtk interface is not implemented yet. Exiting"
 
 #-------------------------------------------------------------------------------
 

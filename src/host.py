@@ -38,7 +38,14 @@ class host:
 	def __init__(self):
 		self.get_smat_home()
 		self.get_utsname()
+		self.has_display()
 
+#---------------------------------------------------------------------------
+	def has_display(self):
+		if os.getenv("DISPLAY") != None:
+			self.display = True
+		else:
+			self.display = False
 #---------------------------------------------------------------------------
 
 	def get_utsname(self):
