@@ -39,7 +39,6 @@ class screen:
 	ERROR_6 = "Error 6: Dependency/Blocking problem."
 	ERROR_6_1 = " Object <%s> can't block itself."
 	ERROR_6_2 = " Mandatory object <%s> can't be set as blocking."
-	ERROR_6_2 = " y object <%s> can't be set as blocking."
 	ERROR_7 = "Error 7: Fast path <%s> does not exist. Exiting"
 #-------------------------------------------------------------------------------
 
@@ -66,7 +65,7 @@ class screen:
 
 	def is_mandatory_by_id(self,id):
 		"""Function returns if object with specified id is mandatory"""
-		return self.objects[obj.id].mandatory
+		return self.objects[id].mandatory
 				
 #---------------------------------------------------------------------------
 
@@ -89,7 +88,7 @@ class screen:
 						if bl == obj.id:
 							raise dependency_exception(screen.ERROR_6 + screen.ERROR_6_1 % (obj.id))
 
-						if is_mandatory_by_id(bl):
+						if self.is_mandatory_by_id(bl):
 							raise dependency_exception(screen.ERROR_6 + screen.ERROR_6_2 % (bl))
 
 						if not blocking.has_key(bl):
@@ -176,12 +175,14 @@ class screen:
 		testobj.type = screen_obj.t_text
 		testobj.mandatory = True
 		testobj.label = "Test id 1"
+		testobj.value = "test string"
 
 		testobj2 = screen_obj()
 		testobj2.id = "id2"
 		testobj2.type = screen_obj.t_text
 		testobj2.label = "Test id 2"
-		testobj2.dependency = [ "id1" ]
+		testobj2.dependency = [ "id1", "id4" ]
+		testobj2.blocking = [ "id5", "id6" ]
 		testobj2.value = "test string"
 
 		testobj3 = screen_obj()
@@ -189,7 +190,7 @@ class screen:
 		testobj3.type = screen_obj.t_list
 		testobj3.list_separator = ","
 		testobj3.label = "Test id 3"
-		testobj3.blocking = [ "id1" ]
+		testobj3.value = "test string"
 		
 		testobj4 = screen_obj()
 		testobj4.id = "id4"
