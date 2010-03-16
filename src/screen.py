@@ -35,11 +35,12 @@ class screen:
 	t_menu = 0
 	t_selector = 1
 
-	ERROR_5 = "Error 5: Unexpected error during creating dependency list."
-	ERROR_6 = "Error 6: Dependency/Blocking problem."
-	ERROR_6_1 = " Object <%s> can't block itself."
-	ERROR_6_2 = " Mandatory object <%s> can't be set as blocking."
-	ERROR_7 = "Error 7: Fast path <%s> does not exist. Exiting"
+	ERROR_5 = "Error 5: Unexpected error during creating dependency list.\n"
+	ERROR_6 = "Error 6: Dependency/Blocking problem.\n"
+	ERROR_6_1 = " Object <%s> can't block itself.\n"
+	ERROR_6_2 = " Mandatory object <%s> can't be set as blocking.\n"
+	ERROR_7 = "Error 7: Fast path <%s> does not exist.\nExiting.\n"
+	ERROR_8 = "Error 8: Object id <%s> does not exist within fpath <%s>.\nExiting.\n"
 #-------------------------------------------------------------------------------
 
 	def __init__(self, host_info, fpath):
@@ -65,7 +66,11 @@ class screen:
 
 	def is_mandatory_by_id(self,id):
 		"""Function returns if object with specified id is mandatory"""
-		return self.objects[id].mandatory
+		try:
+			return self.objects[id].mandatory
+		except KeyError:
+			sys.stderr.write(screen.ERROR_8 % (id, self.fpath))	
+			sys.exit(8)
 				
 #---------------------------------------------------------------------------
 
@@ -117,15 +122,13 @@ class screen:
 		print "active IDs"
 		print ids
 
-		# Following code needs to be optimalized
-
 		if len(blocking) != 0:
 			for block_key in blocking:
 				print block_key
 				if ids.__contains__(block_key):
 					raise dependency_exception(screen.ERROR_6)
 
-
+		if len(dependencies) != 0:
 
 
 
@@ -181,8 +184,7 @@ class screen:
 		testobj2.id = "id2"
 		testobj2.type = screen_obj.t_text
 		testobj2.label = "Test id 2"
-		testobj2.dependency = [ "id1", "id4" ]
-		testobj2.blocking = [ "id5", "id6" ]
+		testobj2.dependency = [ "id1", "id4", "id5" ]
 		testobj2.value = "test string"
 
 		testobj3 = screen_obj()
@@ -206,7 +208,7 @@ class screen:
 		
 
 		self.check_objects()
-	#END OF TESTING
+		#END OF TESTING
 
 #-------------------------------------------------------------------------------
 
