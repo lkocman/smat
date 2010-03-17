@@ -61,7 +61,6 @@ class screen:
 		1. Any object can't be both blocking and mandatory
 		"""
 		pass
-
 #---------------------------------------------------------------------------
 
 	def is_mandatory_by_id(self,id):
@@ -69,9 +68,22 @@ class screen:
 		try:
 			return self.objects[id].mandatory
 		except KeyError:
-			sys.stderr.write(screen.ERROR_8 % (id, self.fpath))	
+			raise dependency_exception(screen.ERROR_8 % (id, self.fpath))	
 			sys.exit(8)
 				
+				
+#---------------------------------------------------------------------------
+	def __get_uniq(self,alist):
+		"""This function should make unique list from [[a,b,c],[a,d],...]"""
+		to_return = [None]
+		for lst in alist:
+			for item in lst:
+				if to_return.__contains__(item):
+					break
+				else:
+					to_return.append(item)
+					
+		return to_return[1:]
 #---------------------------------------------------------------------------
 
 	def check_dependencies(self):
@@ -112,16 +124,6 @@ class screen:
 		# case
 
 
-		ids.sort()
-
-		print "# total deps/blocks --------------------------------"
-		print "Dependencies"
-		print dependencies	
-		print "Blocking"
-		print blocking
-		print "active IDs"
-		print ids
-
 		if len(blocking) != 0:
 			for block_key in blocking:
 				print block_key
@@ -129,7 +131,11 @@ class screen:
 					raise dependency_exception(screen.ERROR_6)
 
 		if len(dependencies) != 0:
-
+			uniq_deps = self.__get_uniq(dependencies.values())
+			for dep in uniq_deps:
+				if not self.objects.has_key(dep):
+					raise dependency_exception(screen.ERROR_8 % (dep, self.fpath))	
+					sys.exit(8)	
 
 
 #-------------------------------------------------------------------------------
@@ -175,24 +181,27 @@ class screen:
 		testobj = screen_obj()
 
 		testobj.id = "id1"
-		testobj.type = screen_obj.t_text
+		testobj.type = screen_obj.t_boolean
 		testobj.mandatory = True
 		testobj.label = "Test id 1"
-		testobj.value = "test string"
+		testobj.value = False
+		testobj.value_true = "true value"
+		testobj.value_false = "true false"
 
 		testobj2 = screen_obj()
 		testobj2.id = "id2"
-		testobj2.type = screen_obj.t_text
+		testobj2.type = screen_obj.t_list
 		testobj2.label = "Test id 2"
-		testobj2.dependency = [ "id1", "id4", "id5" ]
-		testobj2.value = "test string"
+		testobj2.dependency = [ "id1", "id4"]
+		testobj2.value = ["1", "2", "test"] 
+		testobj2.list_separator = ","
 
 		testobj3 = screen_obj()
 		testobj3.id = "id3"
-		testobj3.type = screen_obj.t_list
+		testobj3.type = screen_obj.t_number
 		testobj3.list_separator = ","
 		testobj3.label = "Test id 3"
-		testobj3.value = "test string"
+		testobj3.value = "1"
 		
 		testobj4 = screen_obj()
 		testobj4.id = "id4"
@@ -201,11 +210,16 @@ class screen:
 		testobj4.dependency = [ "id2" ]
 		testobj4.value = "test string"
 
+
 		self.add_object(testobj)
 		self.add_object(testobj2)
 		self.add_object(testobj3)
 		self.add_object(testobj4)
 		
+		print testobj.get_value()
+		print testobj2.get_value()
+		print testobj3.get_value()
+		print testobj4.get_value()
 
 		self.check_objects()
 		#END OF TESTING
@@ -235,9 +249,13 @@ class screen_obj:
 	s_type = "type"
 	s_label = "label"
 	s_command = "command"
+	s_value = "value"
+	s_value_true = "value_true"
+	s_value_false = "value_false"
 	s_list_separator = "list_separator"
 
-	ERROR_2 = "Error 2: Object autoid %d: value for attrbute %s is not set. Exiting."
+	ERROR_2 = "Error 2: Object id <%d>: value for attribute <%s> is not set. Exiting."
+	ERROR_9 = "Error 9: Internal type error in screen_obj.get_value(). Exiting."
 
 #-------------------------------------------------------------------------------
 
@@ -248,16 +266,47 @@ class screen_obj:
 		self.id = None
 		self.type  = screen_obj.t_default
 		self.mandatory = False
-		# Non-mandatory variables
 		self.value = None # Value is set via user input
+		self.cmd = None # Static value 
+		self.label = None # not mandatory only for t_ghost
+		# Mandatory for boolean type	
+		self.cmd_false = None # Static value for false
+		self.value_true = None # Static value for True, mandatory for bool
+		self.value_false = None # Static value for False, mandatory for bool
+
 		self.list_separator = None # Mandatory when id = t_list
+		# Non-mandatory variables
+		self.cmd_format = None
+		self.cmd_arg = None 
+		self.cmd_arg_false = None # Static value for boolean:false
+
 		self.dependency = [] # screen_obj.id
 		self.blocking = [] # screen_obj.id
-		self.command = None # absolute path
-		self.label = None # Mandatory in case that type != t_ghost
-		self.command_false = None # Used only in boolean type
 		self.predicate = [] # [{variable : value}, ...]
 
+#-------------------------------------------------------------------------------
+
+	def get_value(self):
+		try:
+			if self.type == screen_obj.t_list: # A list type
+				return str(self.list_separator.join(self.value))
+
+			elif self.type == screen_obj.t_boolean: # Boolean type
+				if self.value == True:
+					return str(self.value_true)
+				elif self.value == False:
+					return str(self.value_false)
+				else:
+					return None
+			else:
+				return str(self.value)
+
+		except (TypeError, AttributeError):
+			print screen_obj.ERROR_9
+			print "Current setup is:\n"
+			print self.value, "With real type:", type(self.value).__name__, "and defined type id:", self.type
+			sys.exit(9)
+	
 #-------------------------------------------------------------------------------
 
 	def check(self):
@@ -277,21 +326,24 @@ necessary data."""
 				if self.label == None:
 					raise sobj_exception(screen_obj.ERROR_2 % (self.auto_id,
 					                     screen_obj.s_label))
-
+			
 			if self.type == screen_obj.t_list:
 				if self.list_separator == None:
 					raise sobj_exception(screen_obj.ERROR_2 % (self.auto_id,
 					                     screen_obj.s_list_separator))
 
+			if self.type == screen_obj.t_boolean:
+				if self.value_false == None or self.value_true == None:
+					raise sobj_exception(screen_obj.ERROR_2 % (self.auto_id,
+					                     screen_obj.s_value_false + " or " +
+										screen_obj.s_value_true))
+					
 #-------------------------------------------------------------------------------
 
 
 		except sobj_exception as se:
-			if self.__fatal__:
-				print se
-				sys.exit(2)
-			else:
 				print se # This should be viewed later in the text/gtk interface
+				sys.exit(2)
 
 #-------------------------------------------------------------------------------
 
