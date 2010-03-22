@@ -1,5 +1,5 @@
 #!/usr/bin/python2.6
-# -*- coding: ascii -*-
+# -*- coding: utf-8 -*-
 
 """
 CDDL HEADER START
@@ -36,5 +36,5 @@ from screen import *
 
 
 if __name__ == "__main__":
-	smat_inst = smat(smat.m_text)
-	sys.exit(0)
+    smat_inst = smat(smat.m_text)
+    sys.exit(0)

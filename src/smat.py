@@ -1,5 +1,5 @@
 #!/usr/bin/python2.6
-# -*- coding: ascii -*-
+# -*- coding: utf-8 -*-
 
 """
 CDDL HEADER START
@@ -28,60 +28,60 @@ Use is subject to license terms.
 # smat.py - base smat class
 
 import sys, os 
+import smerr
 from host import host_info
 from screen import *
 
 class smat:
-	m_text = 0
-	m_auto = 1
-	m_gtk = 2
+    m_text = 0
+    m_auto = 1
+    m_gtk = 2
 
-	VERSION = 0.2
-	DEF_FPATH = "mmenu"
-	
-	ERROR_8 = "Can't find $DISPLAY. Will now exit."
+    VERSION = 0.2
+    DEF_FPATH = "mmenu"
 
 #-------------------------------------------------------------------------------
 
-	def __init__(self, mode=m_text):
-		"""__init__(smat.m_text | smat.m_auto | smat.m_gtk)"""
-		if (len(sys.argv) > 2):
-			self.print_usage()
-		elif (len(sys.argv) == 1):
-			self.cur_scr = screen(host_info, smat.DEF_FPATH)
-		else:
-			if sys.argv[1] == "help":
-				self.print_usage()
-			elif sys.argv[1] == "version":
-				print smat.VERSION
-			elif sys.argv[1] == "list":
-				self.list_fpaths()
-			else:
-				self.cur_scr = screen(host_info, sys.argv[1])
+    def __init__(self, mode=m_text):
+        """__init__(smat.m_text | smat.m_auto | smat.m_gtk)"""
+        if (len(sys.argv) > 2):
+            self.print_usage()
+        elif (len(sys.argv) == 1):
+            self.cur_scr = screen(host_info, smat.DEF_FPATH)
+        else:
+            if sys.argv[1] == "help":
+                self.print_usage()
+            elif sys.argv[1] == "version":
+                print smat.VERSION
+            elif sys.argv[1] == "list":
+                self.list_fpaths()
+            else:
+                self.cur_scr = screen(host_info, sys.argv[1])
 
-		self.mode = mode	
-		self.start_interface()	
-
-#-------------------------------------------------------------------------------
-
-	def start_interface(self):
-		if self.mode == smat.m_text:
-			self.cur_scr.start_text_interface()
-		elif self.mode == smat.m_auto or self.mode == smat.m_gtk:
-			if  host_info.display:
-				self.cur_scr.start_gtk_interface()
-
-			elif self.mode == smat.m_gtk:
-				print smat.ERROR_8
-				sys.exit(8)
-				
-			else: # mode=smat.m_auto
-				self.cur_scr.start_text_interface()
+        self.mode = mode	
+        self.start_interface()	
 
 #-------------------------------------------------------------------------------
 
-	def print_usage(self):
-		print """Usage:
+    def start_interface(self):
+        """"start_interface() launches curses or gtk gui"""
+        if self.mode == smat.m_text:
+            self.cur_scr.start_text_interface()
+        elif self.mode == smat.m_auto or self.mode == smat.m_gtk:
+            if  host_info.display:
+                self.cur_scr.start_gtk_interface()
+
+            elif self.mode == smat.m_gtk:
+                print smerror.ERROR_8
+                sys.exit(8)
+
+            else: # mode=smat.m_auto
+                self.cur_scr.start_text_interface()
+
+#-------------------------------------------------------------------------------
+
+    def print_usage(self):
+        print """Usage:
 	%s [ subcommand ] [fpath]
 
 	Subcommands:
@@ -94,11 +94,11 @@ class smat:
 
 #-------------------------------------------------------------------------------
 
-	def list_fpaths(self):
-		fpaths=os.listdir(host_info.smat_home)
-		fpaths.sort()
+    def list_fpaths(self):
+        fpaths=os.listdir(host_info.smat_home)
+        fpaths.sort()
 
-		for fpath in fpaths:
-			print fpath
+        for fpath in fpaths:
+            print fpath
 
 #-------------------------------------------------------------------------------
