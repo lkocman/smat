@@ -67,12 +67,14 @@ class smat:
         """"start_interface() launches curses or gtk gui"""
         if self.mode == smat.m_text:
             self.cur_scr.start_text_interface()
+
         elif self.mode == smat.m_auto or self.mode == smat.m_gtk:
+
             if  host_info.display:
                 self.cur_scr.start_gtk_interface()
 
             elif self.mode == smat.m_gtk:
-                print smerror.ERROR_8
+                print smerror.ERROR_3
                 sys.exit(8)
 
             else: # mode=smat.m_auto
@@ -101,5 +103,7 @@ class smat:
 
         for fpath in fpaths:
             print fpath
+	
+        sys.exit(0)
 
 #-------------------------------------------------------------------------------
