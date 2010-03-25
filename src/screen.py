@@ -88,13 +88,15 @@ class screen:
                     
                 else:
                     priorities[obj.cmd_priority] = []
-                    
+
+        return priorities          
 #---------------------------------------------------------------------------
     def gen_cmd(self):
         """gen_cmd() -- This function generates set of command based on 
 screen.objects[]"""
-        
+        cmd = {} 
         """
+        Structure of cmd {}
         {cmd_priority :
             {cmd :
                 {cmd_arg_priority : substitution(cmd_format)}}}
@@ -102,9 +104,23 @@ screen.objects[]"""
         """
         
         res_priority = self.get_reserved_priority()  # Contains indexes of reserved priorities
-        
+
+        """ format of res_priority -- {0: [1, 2], 1: [], 2: []} 
+             obj_cmd_priority.n: [cmd_arg_priority.n] 
+
+        This step is used only to make cmd_arg indexing easier. Each non-reserved index can 
+        be used by objects with non-specified cmd_arg_priority. Each command has reserved 
+        cmd_priority see: priority_by_cmd() which is called from get_reserved_priority().
+        """
+
+        print res_priority
+        print '_______________________________________________________________________________' 
+
         for obj_key in self.objects:
             obj = self.objects[obj_key]
+            print obj.cmd_priority
+
+        return cmd
     
 #---------------------------------------------------------------------------
 
