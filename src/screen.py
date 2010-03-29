@@ -51,7 +51,7 @@ class screen:
 
 #---------------------------------------------------------------------------
 
-    def priority_by_cmd(self, myobj):
+    def get_priority_by_cmd(self, myobj):
         """searches for the highest cmd_priority containing the same command.
         Function returns None in the case of no-match."""
         ret_prior = None
@@ -64,8 +64,12 @@ class screen:
                 if self.objects[obj_key].cmd == myobj.cmd  \
                 and self.objects[obj_key].cmd_priority > ret_prior:
                     ret_prior = self.objects[obj_key].cmd_priority
-                       
+                      
+        if ret_prior == None:
+            raise exception(smerr.ERROR_12 % (myobj.id)) 
+
         return ret_prior
+
         
 #---------------------------------------------------------------------------
     def get_reserved_priority(self):
@@ -75,16 +79,16 @@ class screen:
         
         for obj_key in self.objects:
             obj = self.objects[obj_key]
-            if obj.cmd_priority == None and obj.cmd_arg_priority != None:
-                obj.cmd_priority = self.priority_by_cmd(obj)
+            if obj.cmd_priority == None:
+                obj.cmd_priority = self.get_priority_by_cmd(obj)
                 
             if obj.cmd_priority != None:
                 if priorities.has_key(obj.cmd_priority):
-                    if priorities[obj.cmd_priority].__contains__(obj.cmd_arg_priority):
+                    if priorities[obj.cmd_priority].__contains__(obj.arg_priority):
                         raise sobj_exception(smerr.ERROR_11 % (obj.id,
-                        "obj.cmd_arg_priority", obj.cmd_arg_priority))
+                        "obj.arg_priority", obj.arg_priority))
                     
-                    priorities[obj.cmd_priority].append(obj.cmd_arg_priority)
+                    priorities[obj.cmd_priority].append(obj.arg_priority)
                     
                 else:
                     priorities[obj.cmd_priority] = []
@@ -98,9 +102,7 @@ screen.objects[]"""
         """
         Structure of cmd {}
         {cmd_priority :
-            {cmd :
-                {cmd_arg_priority : substitution(cmd_format)}}}
-        
+            [ cmd, arg_format1, arg_format2, .. ] 
         """
         
         res_priority = self.get_reserved_priority()  # Contains indexes of reserved priorities
@@ -108,19 +110,23 @@ screen.objects[]"""
         """ format of res_priority -- {0: [1, 2], 1: [], 2: []} 
              obj_cmd_priority.n: [cmd_arg_priority.n] 
 
-        This step is used only to make cmd_arg indexing easier. Each non-reserved index can 
-        be used by objects with non-specified cmd_arg_priority. Each command has reserved 
+        This step is used only to make arg indexing easier. Each non-reserved index can 
+        be used by objects with non-specified arg_priority. Each command has reserved 
         cmd_priority see: priority_by_cmd() which is called from get_reserved_priority().
         """
 
-        print res_priority
-        print '_______________________________________________________________________________' 
-
         for obj_key in self.objects:
             obj = self.objects[obj_key]
-            print obj.cmd_priority
+            
+            if not cmd.has_key(obj.cmd_priority):
+                cmd[obj.cmd_priority] = [self.objects[obj_key].cmd] 
+       
+            if obj.arg_priority != None: 
+                if len(cmd[obj.cmd_priority]) - 1 < obj.arg_priority:
+                    cmd[obj.cmd_priority].extend((obj.arg_priority - len(cmd[obj.cmd_priority]) -1) * [None]) 
 
-        return cmd
+        print "cmd___________________________________________________________________________"
+        print cmd
     
 #---------------------------------------------------------------------------
 
@@ -249,8 +255,8 @@ screen.objects[]"""
         testobj.value = "setuid"
         testobj.cmd = "/usr/sbin/useradd"
         testobj.cmd_priority = 0 
-        testobj.cmd_format = "$cmd $id"
-        testobj.cmd_arg_priority = -1
+        testobj.arg_format = "$cmd $id"
+        testobj.arg_priority = -1
 
         testobj2 = screen_obj(self)
         testobj2.id = "groups"
@@ -259,8 +265,8 @@ screen.objects[]"""
         testobj2.value = ["staff", "wheel", "audio"] 
         testobj2.list_separator = ","
         testobj2.cmd = "/usr/sbin/useradd"
-        testobj2.cmd_arg_priority = 1
-        testobj2.cmd_format = "$cmd -G $groups"
+        testobj2.arg_priority = 1
+        testobj2.arg_format = "-G $groups"
 
         testobj3 = screen_obj(self)
         testobj3.id = "dir"
@@ -268,8 +274,8 @@ screen.objects[]"""
         testobj3.label = "User's home directory"
         testobj3.value = "/home/setuid"
         testobj3.cmd = "/usr/sbin/useradd"
-        testobj3.cmd_arg_priority = 2
-        testobj3.cmd_format = "$cmd -d $dir"
+        testobj3.arg_priority = 2
+        testobj3.arg_format = "-d $dir"
 
         testobj4 = screen_obj(self)
         testobj4.id = "dir_cr"
@@ -278,7 +284,7 @@ screen.objects[]"""
         testobj4.label = "Create user's directory"
         testobj4.value = True
         testobj4.cmd = "/usr/sbin/useradd"
-        testobj4.cmd_format = "$cmd -m"
+        testobj4.arg_format = "-m"
 
         testobj5 = screen_obj(self)	
         testobj5.id = "lock_after_retries"
@@ -287,15 +293,15 @@ screen.objects[]"""
         testobj5.value = False
         testobj5.cmd = "/usr/sbin/usermod"
         testobj5.cmd_priority = 1
-        testobj5.cmd_format = '$cmd -P "lock_after_retries=yes"'
-        testobj5.cmd_format_false = '$cmd -P "lock_after_retries=no"'
+        testobj5.arg_format = '$cmd -P "lock_after_retries=yes"'
+        testobj5.arg_format_false = '$cmd -P "lock_after_retries=no"'
 
         testobj6 = screen_obj(self)
         testobj6.type = screen_obj.t_ghost
         testobj6.id = "test"
         testobj6.cmd = "echo"
         testobj6.cmd_priority = 2
-        testobj6.cmd_format = "$cmd test"
+        testobj6.arg_format = "$cmd test"
 
 
 
@@ -365,12 +371,12 @@ class screen_obj:
 
         self.list_separator = None # Mandatory when id = t_list
         # Non-mandatory variables
-        self.cmd_format = None
+        self.arg_format = None
         self.cmd_priority = None
-        self.cmd_format_false = None # Boolean false
+        self.arg_format_false = None # Boolean false
 
-        self.cmd_arg_priority = None 
-        self.cmd_arg_priority_false = None  # Boolean false
+        self.arg_priority = None 
+        self.arg_priority_false = None  # Boolean false
 
         self.dependency = [] # screen_obj.id
         self.blocking = [] # screen_obj.id
@@ -423,6 +429,7 @@ necessary data."""
                 if self.list_separator == None:
                     raise sobj_exception(smerr.ERROR_2 % (self.auto_id,
                                      self.id, screen_obj.s_list_separator))
+
 
 #            if self.type == screen_obj.t_boolean:
 #                if self.value_false == None or self.value_true == None:
