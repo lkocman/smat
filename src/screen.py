@@ -95,6 +95,12 @@ class screen:
 
         return priorities          
 #---------------------------------------------------------------------------
+
+    def get_arg_value(self, arg_format):
+        """This function should replace $variables with obj.value"""
+        return arg_format
+
+#---------------------------------------------------------------------------
     def gen_cmd(self):
         """gen_cmd() -- This function generates set of command based on 
 screen.objects[]"""
@@ -122,8 +128,15 @@ screen.objects[]"""
                 cmd[obj.cmd_priority] = [self.objects[obj_key].cmd] 
        
             if obj.arg_priority != None: 
-                if len(cmd[obj.cmd_priority]) - 1 < obj.arg_priority:
-                    cmd[obj.cmd_priority].extend((obj.arg_priority - len(cmd[obj.cmd_priority]) -1) * [None]) 
+                if obj.cmd_priority >= 0  and len(cmd[obj.cmd_priority])  < obj.arg_priority + 1:
+                    cmd[obj.cmd_priority].extend((obj.arg_priority - len(cmd[obj.cmd_priority]) ) * [None]) 
+                    cmd[obj.cmd_priority].append(self.get_arg_value(obj.arg_format)) 
+                elif len(cmd[obj.cmd_priority]) <= obj.arg_priority + 1:
+                    cmd[obj.cmd_priority][obj.arg_priority] = self.get_arg_value(obj.arg_format)
+
+            else:
+                
+
 
         print "cmd___________________________________________________________________________"
         print cmd
@@ -284,6 +297,7 @@ screen.objects[]"""
         testobj4.label = "Create user's directory"
         testobj4.value = True
         testobj4.cmd = "/usr/sbin/useradd"
+        testobj4.arg_priority = 0
         testobj4.arg_format = "-m"
 
         testobj5 = screen_obj(self)	
