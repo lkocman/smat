@@ -1,4 +1,4 @@
-#!/usr/bin/python2.6
+#!/usr/bin/python
 # -*- coding: utf-8 -*-
 
 """
@@ -105,6 +105,7 @@ class screen:
         """gen_cmd() -- This function generates set of command based on 
 screen.objects[]"""
         cmd = {} 
+        cmd_queue = {} 
         """
         Structure of cmd {}
         {cmd_priority :
@@ -128,17 +129,34 @@ screen.objects[]"""
                 cmd[obj.cmd_priority] = [self.objects[obj_key].cmd] 
        
             if obj.arg_priority != None: 
-                if obj.cmd_priority >= 0  and len(cmd[obj.cmd_priority])  < obj.arg_priority + 1:
-                    cmd[obj.cmd_priority].extend((obj.arg_priority - len(cmd[obj.cmd_priority]) ) * [None]) 
-                    cmd[obj.cmd_priority].append(self.get_arg_value(obj.arg_format)) 
-                elif len(cmd[obj.cmd_priority]) <= obj.arg_priority + 1:
-                    cmd[obj.cmd_priority][obj.arg_priority] = self.get_arg_value(obj.arg_format)
-
+                if obj.arg_priority < 0: # -1 -2 ...
+                    cmd_queue[abs(obj_arg_priorty)] = self.get_arg_value(arg_format)
+                    
+                if len(cmd[obj.cmd_priority]) - 1 < obj.arg_priority: # cmd[x][0]=cmd_string
+                    cmd[obj.cmd_priority].extend(
+                        (obj.arg_priority - (len(cmd[obj.cmd_priorty]) -1)) * [ None ])
+                    cmd[obj.cmd_priority][obj.arg_priority + 1] = self.get_arg_value(obj.arg_format) 
+                else:
+                    cmd[obj.cmd_priority][obj.arg_priority + 1] = self.get_arg_value(obj.arg_format)
             else:
+                try:
+                    i = 0
+                    while True:
+                        i = cmd[obj.cmd_priority].index(None, i)
+                        
+                        if not res_priority[obj.cmd_priority].__contains__(i):
+                            cmd[obj.cmd_priority][i+1] = self.get_arg_value(obj.arg_format)
+                            res_priority[obj.cmd_priority].append(i)
+                            break
+                        i=i+1
+                except ValueError:
+                # TODO continue here
+                    i = 1
+                    for x in res_priority[obj.cmd_priority].sort():
+                        i=i+1
+                         
+                    
                 
-
-
-        print "cmd___________________________________________________________________________"
         print cmd
     
 #---------------------------------------------------------------------------
@@ -243,7 +261,7 @@ screen.objects[]"""
             else:
                 self.objects[sobj.id] = sobj
 
-        except sobj_exception as se:
+        except sobj_exception, se:
             print se
             sys.exit(1)
 
@@ -454,7 +472,7 @@ necessary data."""
 #-------------------------------------------------------------------------------
 
 
-        except sobj_exception as se:
+        except sobj_exception, se:
             print se # This should be viewed later in the text/gtk interface
             sys.exit(2)
 
