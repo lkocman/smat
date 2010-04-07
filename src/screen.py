@@ -126,18 +126,18 @@ screen.objects[]"""
             obj = self.objects[obj_key]
             
             if not cmd.has_key(obj.cmd_priority):
-                cmd[obj.cmd_priority] = [self.objects[obj_key].cmd] 
+                cmd[obj.cmd_priority] = [obj.cmd] 
        
             if obj.arg_priority != None: 
                 if obj.arg_priority < 0: # -1 -2 ...
-                    cmd_queue[abs(obj_arg_priorty)] = self.get_arg_value(arg_format)
+                    cmd_queue[abs(obj.arg_priority)] = self.get_arg_value(obj.arg_format)
                     
                 if len(cmd[obj.cmd_priority]) - 1 < obj.arg_priority: # cmd[x][0]=cmd_string
                     cmd[obj.cmd_priority].extend(
                         (obj.arg_priority - (len(cmd[obj.cmd_priorty]) -1)) * [ None ])
                     cmd[obj.cmd_priority][obj.arg_priority + 1] = self.get_arg_value(obj.arg_format) 
                 else:
-                    cmd[obj.cmd_priority][obj.arg_priority + 1] = self.get_arg_value(obj.arg_format)
+                    cmd[obj.cmd_priority].append(self.get_arg_value(obj.arg_format))
             else:
                 try:
                     i = 0
@@ -151,12 +151,10 @@ screen.objects[]"""
                         i=i+1
                 except ValueError:
                 # TODO continue here
-                    i = 1
-                    for x in res_priority[obj.cmd_priority].sort():
-                        i=i+1
-                         
-                    
-                
+                    i = len(cmd[obj.cmd_priority])
+                    if not res_priority[obj.cmd_priority].__contains__(i): 
+                        cmd[obj.cmd_priority][i].append(obj.arg_format)
+                        res_priority[obj.cmd_priority].append(i)
         print cmd
     
 #---------------------------------------------------------------------------
@@ -334,9 +332,6 @@ screen.objects[]"""
         testobj6.cmd = "echo"
         testobj6.cmd_priority = 2
         testobj6.arg_format = "$cmd test"
-
-
-
 
         self.add_object(testobj)
         self.add_object(testobj2)
