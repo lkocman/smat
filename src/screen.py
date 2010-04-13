@@ -135,7 +135,8 @@ screen.objects[]"""
 
                 if obj.arg_priority < 0: # -1 -2 ...
                     if not cmd_queue.has_key(obj.cmd_priority):
-                        cmd_queue[obj.cmd_priority] = [[abs(obj.arg_priority),self.get_arg_value(obj.arg_format)]]
+                        cmd_queue[obj.cmd_priority] = [[abs(obj.arg_priority),
+                                           self.get_arg_value(obj.arg_format)]]
                         continue
                     else:
                         cmd_queue[obj.cmd_priority].append([abs(obj.arg_priority),self.get_arg_value(obj.arg_format)])
