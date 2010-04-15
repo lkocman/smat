@@ -96,11 +96,6 @@ class screen:
         return priorities
 #---------------------------------------------------------------------------
 
-    def get_arg_value(self, arg_format):
-        """This function should replace $variables with obj.value"""
-        return arg_format
-
-#---------------------------------------------------------------------------
     def gen_cmd(self):
         """gen_cmd() -- This function generates set of command based on
 screen.objects[]"""
@@ -128,45 +123,48 @@ screen.objects[]"""
         for obj_key in self.objects:
             obj = self.objects[obj_key]
 
-            if not cmd.has_key(obj.cmd_priority):
-                cmd[obj.cmd_priority] = [obj.cmd]
+            if obj.type == screen_obj.t_boolean and obj.value == None:
+                continue
 
-            if obj.arg_priority != None:
+            if not cmd.has_key(obj.get_cmd_priority()):
+                cmd[obj.get_cmd_priority()] = [obj.get_cmd()]
 
-                if obj.arg_priority < 0: # -1 -2 ...
-                    if not cmd_queue.has_key(obj.cmd_priority):
-                        cmd_queue[obj.cmd_priority] = [[abs(obj.arg_priority),
-                                           self.get_arg_value(obj.arg_format)]]
+            if obj.get_arg_priority() != None:
+
+                if obj.get_arg_priority() < 0: # -1 -2 ...
+                    if not cmd_queue.has_key(obj.get_cmd_priority()):
+                        cmd_queue[obj.get_cmd_priority()] = [[abs(obj.get_arg_priority()),
+                                           obj.get_arg_format()]]
                         continue
                     else:
-                        cmd_queue[obj.cmd_priority].append([abs(obj.arg_priority),self.get_arg_value(obj.arg_format)])
+                        cmd_queue[obj.get_cmd_priority()].append([abs(obj.get_arg_priority()),obj.get_arg_format()])
                         continue
 
-                if len(cmd[obj.cmd_priority]) - 1 < obj.arg_priority: # cmd[x][0]=cmd_string
-                    cmd[obj.cmd_priority].extend(
-                        (obj.arg_priority - (len(cmd[obj.cmd_priorty]) -1)) * [ None ])
-                    cmd[obj.cmd_priority][obj.arg_priority + 1] = self.get_arg_value(obj.arg_format)
+                if len(cmd[obj.get_cmd_priority()]) - 1 < obj.get_arg_priority(): # cmd[x][0]=cmd_string
+                    cmd[obj.get_cmd_priority()].extend(
+                        (obj.get_arg_priority() - (len(cmd[obj.get_cmd_priorty()]) -1)) * [ None ])
+                    cmd[obj.get_cmd_priority()][obj.get_arg_priority() + 1] = obj.get_arg_format()
                     continue
                 else:
-                    cmd[obj.cmd_priority].append(self.get_arg_value(obj.arg_format))
+                    cmd[obj.get_cmd_priority()].append(obj.get_arg_format())
                     continue
             else:
                 try:
                     i = 0
                     while True:
-                        i = cmd[obj.cmd_priority].index(None, i)
+                        i = cmd[obj.get_cmd_priority()].index(None, i)
 
-                        if not res_priority[obj.cmd_priority].__contains__(i):
-                            cmd[obj.cmd_priority][i+1] = self.get_arg_value(obj.arg_format)
-                            res_priority[obj.cmd_priority].append(i)
+                        if not res_priority[obj.get_cmd_priority()].__contains__(i):
+                            cmd[obj.get_cmd_priority()][i+1] = obj.get_arg_format()
+                            res_priority[obj.get_cmd_priority()].append(i)
                             break
                         i=i+1
                 except ValueError:
                 # TODO continue here
-                    i = len(cmd[obj.cmd_priority])
-                    if not res_priority[obj.cmd_priority].__contains__(i):
-                        cmd[obj.cmd_priority].append(obj.arg_format)
-                        res_priority[obj.cmd_priority].append(i)
+                    i = len(cmd[obj.get_cmd_priority()])
+                    if not res_priority[obj.get_cmd_priority()].__contains__(i):
+                        cmd[obj.get_cmd_priority()].append(obj.get_arg_format())
+                        res_priority[obj.get_cmd_priority()].append(i)
 
 
         print cmd
@@ -179,7 +177,6 @@ screen.objects[]"""
                 cmd[cmd_priority].append(cmd_format[1]) # 0 is id
 
 
-        print "RIP"
         print cmd
 
 #---------------------------------------------------------------------------
@@ -426,6 +423,7 @@ class screen_obj:
         # Non-mandatory variables
         self.arg_format = None
         self.cmd_priority = None
+        self.cmd_priority_false = None
         self.arg_format_false = None # Boolean false
 
         self.arg_priority = None
@@ -458,6 +456,59 @@ class screen_obj:
             print self.value, "With real type:", type(self.value).__name__, "and defined type id:", self.type
             sys.exit(9)
 
+#-------------------------------------------------------------------------------
+    def get_arg_format(self):
+        """get_arg_format(self)"""
+        if self.type == screen_obj.t_boolean:
+            if self.value == True:
+                return self.arg_format
+            elif self.value == False:
+                return self.arg_format_false
+            else:
+                return self.value # None in this case
+        else:
+            return self.arg_format
+#-------------------------------------------------------------------------------
+    def get_arg_priority(self):
+        """get_arg_priority(self)"""
+        if self.type == screen_obj.t_boolean:
+            if self.value == True:
+                return self.arg_priority
+            elif self.value == False:
+                return self.arg_priority_false
+            else:
+                return self.value # None in this case
+        else:
+            return self.arg_priority
+#-------------------------------------------------------------------------------
+    def get_cmd_priority(self):
+        """get_cmd_priority(self)"""
+        if self.type == screen_obj.t_boolean:
+            if self.value == True:
+                return self.cmd_priority
+            elif self.value == False:
+                # We should use same cmd_priority in the case that it was not
+                # set. It can be dangerous ... but smat can handle that
+                if self.cmd_priority_false == None:
+                    return self.cmd_priority
+                else:
+                    return self.cmd_priority_false
+            else:
+                return self.value # None in this case
+        else:
+            return self.cmd_priority
+#-------------------------------------------------------------------------------
+    def get_cmd(self):
+        """get_cmd(self)"""
+        if self.type == screen_obj.t_boolean:
+            if self.value == True:
+                return self.cmd
+            elif self.value == False:
+                return self.cmd_false
+            else:
+                return self.value # None
+        else:
+            return self.cmd
 #-------------------------------------------------------------------------------
 
     def check(self):
