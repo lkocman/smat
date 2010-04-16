@@ -29,6 +29,7 @@ Use is subject to license terms.
 
 import os, sys
 import smerr
+import obj_reader
 
 class screen:
     """Base class of the entire project"""
@@ -41,11 +42,12 @@ class screen:
     def __init__(self, host_info, fpath):
         """screen(fpath)"""
         self.title = None
-        self.fpath = fpath
+        self.help = None
         self.parent = None
+
+        self.fpath = fpath
         self.type = None
         self.url = os.path.join(host_info.smat_home, fpath)
-        self.pkg_dep = []
         self.objects = {}
         self.obj_count = 0
 
@@ -123,8 +125,13 @@ screen.objects[]"""
         for obj_key in self.objects:
             obj = self.objects[obj_key]
 
-            if obj.type == screen_obj.t_boolean and obj.value == None:
-                continue
+            if obj.type == screen_obj.t_boolean:
+                if obj.value == True and obj.cmd == None:
+                    continue
+                elif obj.value == False and obj.cmd_false == None:
+                    continue
+                elif obj.value == None:
+                    continue
 
             if not cmd.has_key(obj.get_cmd_priority()):
                 cmd[obj.get_cmd_priority()] = [obj.get_cmd()]
@@ -159,6 +166,7 @@ screen.objects[]"""
                             res_priority[obj.get_cmd_priority()].append(i)
                             break
                         i=i+1
+
                 except ValueError:
                 # TODO continue here
                     i = len(cmd[obj.get_cmd_priority()])
@@ -167,7 +175,6 @@ screen.objects[]"""
                         res_priority[obj.get_cmd_priority()].append(i)
 
 
-        print cmd
         for cmd_priority in cmd_queue:
             q_values = cmd_queue[cmd_priority]
             q_values.sort();q_values.reverse()
@@ -177,7 +184,7 @@ screen.objects[]"""
                 cmd[cmd_priority].append(cmd_format[1]) # 0 is id
 
 
-        print cmd
+        print "`DEBUG: Generated command will be: \n", cmd
 
 #---------------------------------------------------------------------------
 
@@ -259,7 +266,6 @@ screen.objects[]"""
 
     def start_text_interface(self):
         """This method is launching curses based interface. """
-        print "Starting curses based interface"
         self.read_objects()
         self.check_dependencies() # This will invoked by user in future
 
@@ -267,7 +273,6 @@ screen.objects[]"""
 
     def start_gtk_interface(self):
         """This method is launching gtk intefrace for smat. """
-        print "Gtk interface is not implemented yet jumping to curses interface."
         self.start_text_interface()
 
 #-------------------------------------------------------------------------------
@@ -276,10 +281,11 @@ screen.objects[]"""
         """add_object(screen_obj)"""
         try:
             sobj.check()
+
             if self.objects.has_key(sobj.id):
                 raise sobj_exception(smerr.ERROR_10 % (sobj.id))
             else:
-                self.objects[sobj.id] = sobj
+                    self.objects[sobj.id] = sobj
 
         except sobj_exception, se:
             print se
@@ -289,83 +295,25 @@ screen.objects[]"""
 
     def read_objects(self):
 
+        screen_file = None
         try:
-            open(self.url)
+            file = open(self.url)
+            screen_file = file.readlines()
+            file.close()
+
         except IOError:
             print smerr.ERROR_7 % ( self.fpath)
             sys.exit(7)
+        try:
+            for obj in obj_reader.obj_loader(screen_file, self.fpath):
+                self.add_object(obj)
 
+            self.gen_cmd()
 
-        #TESTING
-        testobj = screen_obj(self)
+        except TypeError:
+            print smerr.ERROR_13
+            #raise sobj_exception(smerr.ERROR_13)
 
-        testobj.id = "username"
-        testobj.type = screen_obj.t_text
-        testobj.mandatory = True
-        testobj.label = "User name"
-        testobj.value = "setuid"
-        testobj.cmd = "/usr/sbin/useradd"
-        testobj.cmd_priority = 0
-        testobj.arg_format = "$id"
-        testobj.arg_priority = -1
-
-        testobj2 = screen_obj(self)
-        testobj2.id = "groups"
-        testobj2.type = screen_obj.t_list
-        testobj2.label = "User groups"
-        testobj2.value = ["staff", "wheel", "audio"]
-        testobj2.list_separator = ","
-        testobj2.cmd = "/usr/sbin/useradd"
-        testobj2.arg_priority = -2
-        testobj2.arg_format = "-G $groups"
-
-        testobj3 = screen_obj(self)
-        testobj3.id = "dir"
-        testobj3.type = screen_obj.t_text
-        testobj3.label = "User's home directory"
-        testobj3.value = "/home/setuid"
-        testobj3.cmd = "/usr/sbin/useradd"
-        testobj3.arg_priority = -3
-        testobj3.arg_format = "-d $dir"
-
-        testobj4 = screen_obj(self)
-        testobj4.id = "dir_cr"
-        testobj4.type = screen_obj.t_boolean
-        testobj4.dependency = [ "dir" ]
-        testobj4.label = "Create user's directory"
-        testobj4.value = True
-        testobj4.cmd = "/usr/sbin/useradd"
-        testobj4.arg_priority = 0
-        testobj4.arg_format = "-m"
-
-        testobj5 = screen_obj(self)
-        testobj5.id = "lock_after_retries"
-        testobj5.type = screen_obj.t_boolean
-        testobj5.label = "Lock after retries"
-        testobj5.value = False
-        testobj5.cmd = "/usr/sbin/usermod"
-        testobj5.cmd_priority = 1
-        testobj5.arg_format = '-P "lock_after_retries=yes"'
-        testobj5.arg_priority = -1
-        testobj5.arg_format_false = '$cmd -P "lock_after_retries=no"'
-
-        testobj6 = screen_obj(self)
-        testobj6.type = screen_obj.t_ghost
-        testobj6.id = "hello"
-        testobj6.cmd = "echo"
-        testobj6.cmd_priority = 2
-        testobj6.arg_format = "-t test"
-
-        self.add_object(testobj)
-        self.add_object(testobj2)
-        self.add_object(testobj3)
-        self.add_object(testobj4)
-        self.add_object(testobj5)
-        self.add_object(testobj6)
-
-
-        self.gen_cmd()
-        #END OF TESTING
 
 #-------------------------------------------------------------------------------
 
@@ -386,6 +334,10 @@ class screen_obj:
     t_link = 0
 
     t_default = t_text # Default type set to text
+
+    # Screen objects types
+    sot_obj = "scr_obj"
+    sot_info = "scr_info"
 
     # String contstants
     s_id = "id"
@@ -487,14 +439,7 @@ class screen_obj:
             if self.value == True:
                 return self.cmd_priority
             elif self.value == False:
-                # We should use same cmd_priority in the case that it was not
-                # set. It can be dangerous ... but smat can handle that
-                if self.cmd_priority_false == None:
-                    return self.cmd_priority
-                else:
-                    return self.cmd_priority_false
-            else:
-                return self.value # None in this case
+                return self.cmd_priority_false
         else:
             return self.cmd_priority
 #-------------------------------------------------------------------------------
@@ -534,6 +479,10 @@ necessary data."""
                     raise sobj_exception(smerr.ERROR_2 % (self.auto_id,
                                      self.id, screen_obj.s_list_separator))
 
+            if self.type == screen_obj.t_boolean and \
+               self.cmd_priority != None and \
+               self.cmd_priority_false == None:
+                self.cmd_priority_false = self.cmd_priority
 
 #            if self.type == screen_obj.t_boolean:
 #                if self.value_false == None or self.value_true == None:

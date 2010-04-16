@@ -34,6 +34,7 @@ class host:
     SUPPORTED_OS = [ "SunOS" ] # Maybe OracleOS in future ;-)
     smat_home_var = "SMAT_HOME"
     smat_def_path = "/usr/share/smat/fpaths"
+    comment_char = "#"
 #---------------------------------------------------------------------------
 
     def __init__(self):

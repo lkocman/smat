@@ -3,7 +3,13 @@
 #
 
 
+scr_info {
+	parent = none
+	title = Main Menu
+	help = Text displayed as help
+}
+
 scr_obj {
 	type = link
-	id = "mmenu"
+	id = mmenu
 }
