@@ -29,7 +29,9 @@ Use is subject to license terms.
 
 import os, sys
 import smerr
-import obj_reader
+import obj_loader
+import traceback
+import curses
 
 class screen:
     """Base class of the entire project"""
@@ -37,6 +39,9 @@ class screen:
     t_menu = 0
     t_selector = 1
 
+    s_title = "title"
+    s_parent = "parent"
+    s_help = "help"
 #-------------------------------------------------------------------------------
 
     def __init__(self, host_info, fpath):
@@ -44,12 +49,13 @@ class screen:
         self.title = None
         self.help = None
         self.parent = None
-
+        self.type = None # This will be taken from the first object
         self.fpath = fpath
         self.type = None
         self.url = os.path.join(host_info.smat_home, fpath)
         self.objects = {}
         self.obj_count = 0
+        self.read_objects()
 
 #---------------------------------------------------------------------------
 
@@ -101,6 +107,8 @@ class screen:
     def gen_cmd(self):
         """gen_cmd() -- This function generates set of command based on
 screen.objects[]"""
+        self.check_dependencies()
+
         cmd = {}
         cmd_queue = {}
         """
@@ -168,7 +176,6 @@ screen.objects[]"""
                         i=i+1
 
                 except ValueError:
-                # TODO continue here
                     i = len(cmd[obj.get_cmd_priority()])
                     if not res_priority[obj.get_cmd_priority()].__contains__(i):
                         cmd[obj.get_cmd_priority()].append(obj.get_arg_format())
@@ -264,28 +271,22 @@ screen.objects[]"""
 
 #-------------------------------------------------------------------------------
 
-    def start_text_interface(self):
-        """This method is launching curses based interface. """
-        self.read_objects()
-        self.check_dependencies() # This will invoked by user in future
-
-#-------------------------------------------------------------------------------
-
-    def start_gtk_interface(self):
-        """This method is launching gtk intefrace for smat. """
-        self.start_text_interface()
-
-#-------------------------------------------------------------------------------
-
     def add_object(self, sobj):
         """add_object(screen_obj)"""
         try:
+
             sobj.check()
+
+            if self.type == screen.t_menu and sobj.type != screen_obj.t_link \
+               or self.type == screen.t_selector \
+               and sobj.type == screen_obj.t_link:
+                print smerr.ERROR_17
+                sys.exit(17)
 
             if self.objects.has_key(sobj.id):
                 raise sobj_exception(smerr.ERROR_10 % (sobj.id))
             else:
-                    self.objects[sobj.id] = sobj
+                self.objects[sobj.id] = sobj
 
         except sobj_exception, se:
             print se
@@ -304,14 +305,15 @@ screen.objects[]"""
         except IOError:
             print smerr.ERROR_7 % ( self.fpath)
             sys.exit(7)
-        try:
-            for obj in obj_reader.obj_loader(screen_file, self.fpath):
-                self.add_object(obj)
+        objr = obj_loader.obj_loader(screen_file, self.fpath)
+        self.title, self.parent, self.help = objr.get_scr_info()
 
-            self.gen_cmd()
+        for obj in objr.get_objects():
+            self.add_object(obj)
 
-        except TypeError:
-            print smerr.ERROR_13
+#        except TypeError, e:
+ #           print e
+ #           print smerr.ERROR_13
             #raise sobj_exception(smerr.ERROR_13)
 
 
@@ -343,22 +345,31 @@ class screen_obj:
     s_id = "id"
     s_type = "type"
     s_label = "label"
-    s_command = "cmd"
     s_value = "value"
+    s_cmd = "cmd"
+    s_cmd_false = "cmd_false"
+    s_cmd_priority = "cmd_priority"
+    s_cmd_priority_false = "cmd_priority_false"
     s_value_true = "value_true"
     s_value_false = "value_false"
+    s_arg_format = "arg_format"
+    s_arg_format_false = "arg_format_false"
+    s_arg_priority = "arg_priority"
+    s_arg_priority_false = "arg_priority_false"
     s_list_separator = "list_separator"
+    s_blocking = "blocking"
+    s_dependency = "dependency"
+    s_mandatory = "mandatory"
 
 
 
 #-------------------------------------------------------------------------------
 
-    def __init__(self, parent_screen):
+    def __init__(self):
         """screen_obj(parent_screen)"""
         # Mandatory variables
 
-        self.auto_id = parent_screen.obj_count # Set mandatory autoid
-        parent_screen.obj_count += 1 # Inc. number of initialized objects
+        self.auto_id = None
 
         self.id = None
         self.type  = screen_obj.t_default
@@ -366,17 +377,15 @@ class screen_obj:
         self.value = None # Value is set via user input
         self.cmd = None # Static value
         self.label = None # not mandatory only for t_ghost
-        # Mandatory for boolean type
         self.cmd_false = None # Static value for false
         self.value_true = None # Static value for True, mandatory for bool
         self.value_false = None # Static value for False, mandatory for bool
 
         self.list_separator = None # Mandatory when id = t_list
-        # Non-mandatory variables
         self.arg_format = None
+        self.arg_format_false = None # Boolean false
         self.cmd_priority = None
         self.cmd_priority_false = None
-        self.arg_format_false = None # Boolean false
 
         self.arg_priority = None
         self.arg_priority_false = None  # Boolean false
@@ -460,35 +469,32 @@ class screen_obj:
         """check(). A set of test to check if object contains
 necessary data."""
         try:
-            if self.id == None:
-                raise sobj_exception(smerr.ERROR_2 % self.auto_id,
-                                     self.id, screen_obj.s_id)
-            elif self.type == None:
-                raise sobj_exception(smerr.ERROR_2 % self.auto_id,
-                                     selfid, screen_obj.s_type)
+            if self.type == screen_obj.t_link:
+                if self.value == None:
+                    raise sobj_exception(smerr.ERROR_2 % (self.auto_id,screen_obj.s_value))
+                else:
+                    self.id = self.value
 
-            # Extended check
+            if self.id == None:
+                raise sobj_exception(smerr.ERROR_2 % (self.auto_id,screen_obj.s_id))
+
+            elif self.type == None:
+                raise sobj_exception(smerr.ERROR_2 % (self.auto_id,screen_obj.s_type))
 
             if self.type > screen_obj.t_ghost:
                 if self.label == None:
-                    raise sobj_exception(smerr.ERROR_2 % (self.auto_id,
-                                     self.id, screen_obj.s_label))
+                    raise sobj_exception(smerr.ERROR_2 % (self.auto_id, \
+                                     screen_obj.s_label))
 
             if self.type == screen_obj.t_list:
                 if self.list_separator == None:
-                    raise sobj_exception(smerr.ERROR_2 % (self.auto_id,
-                                     self.id, screen_obj.s_list_separator))
+                    raise sobj_exception(smerr.ERROR_2 % (self.auto_id, \
+                                     screen_obj.s_list_separator))
 
             if self.type == screen_obj.t_boolean and \
                self.cmd_priority != None and \
                self.cmd_priority_false == None:
                 self.cmd_priority_false = self.cmd_priority
-
-#            if self.type == screen_obj.t_boolean:
-#                if self.value_false == None or self.value_true == None:
-#                    raise sobj_exception(smerr.ERROR_2 % (self.auto_id,
-#                                                               screen_obj.s_value_false + " or " +
-#                                                               screen_obj.s_value_true))
 
 #-------------------------------------------------------------------------------
 
@@ -526,3 +532,55 @@ class dependency_exception(Exception):
         return self.value
 
 #-------------------------------------------------------------------------------
+
+class curses_screen:
+    TITLE_LINE = 2
+    def __init__(self, host_info, fpath):
+        self.scr_inf = screen(host_info, fpath)
+        self.ncols = 0
+        self.nlines = 0
+        self.stdscr = None
+
+        try:
+            self.start_text_interface()
+
+            # Just for testing
+            key = self.stdscr.getch()
+
+            self.exit_text_interface()
+
+        except Exception, e:
+            self.exit_text_interface()
+            print e
+
+
+
+    def draw_all_screen(self):
+        self.get_yx() # Trying to handle possible resizing of screen
+        self.stdscr.clear()
+        self.draw_title()
+        self.stdscr.refresh()
+
+    def get_yx(self):
+        self.nlines, self.ncols = self.stdscr.getmaxyx()
+
+    def draw_title(self):
+        start_col = (self.ncols - len(self.scr_inf.title)) // 2
+        self.stdscr.addstr(curses_screen.TITLE_LINE, start_col, self.scr_inf.title)
+
+    def start_text_interface(self):
+        self.stdscr = curses.initscr()
+        curses.noecho()
+        curses.cbreak()
+        self.stdscr.keypad(1)
+
+        self.draw_all_screen()
+
+
+    def exit_text_interface(self):
+        self.stdscr.clear()
+        self.stdscr.refresh()
+        curses.nocbreak()
+        self.stdscr.keypad(0)
+        curses.echo()
+        curses.endwin()

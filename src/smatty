@@ -27,7 +27,7 @@ Use is subject to license terms.
 
 # smat - System Modular Administration Tool utility
 
-import sys, os 
+import sys, os
 from smat import smat
 from host import host_info
 from screen import *

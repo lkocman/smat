@@ -27,7 +27,7 @@ Use is subject to license terms.
 
 # smat.py - base smat class
 
-import sys, os 
+import sys, os
 import smerr
 from host import host_info
 from screen import *
@@ -47,7 +47,8 @@ class smat:
         if (len(sys.argv) > 2):
             self.print_usage()
         elif (len(sys.argv) == 1):
-            self.cur_scr = screen(host_info, smat.DEF_FPATH)
+#            self.cur_scr = screen(host_info, smat.DEF_FPATH)
+            self.cur_scr = curses_screen(host_info, smat.DEF_FPATH)
         else:
             if sys.argv[1] == "help":
                 self.print_usage()
@@ -56,10 +57,10 @@ class smat:
             elif sys.argv[1] == "list":
                 self.list_fpaths()
             else:
-                self.cur_scr = screen(host_info, sys.argv[1])
+                self.cur_scr = curses_screen(host_info, sys.argv[1])
 
-        self.mode = mode	
-        self.start_interface()	
+        self.mode = mode
+        self.start_interface()
 
 #-------------------------------------------------------------------------------
 
@@ -71,7 +72,7 @@ class smat:
         elif self.mode == smat.m_auto or self.mode == smat.m_gtk:
 
             if  host_info.display:
-                self.cur_scr.start_gtk_interface()
+                self.cur_scr.start_text_interface()
 
             elif self.mode == smat.m_gtk:
                 print smerror.ERROR_3
@@ -103,7 +104,7 @@ class smat:
 
         for fpath in fpaths:
             print fpath
-	
+
         sys.exit(0)
 
 #-------------------------------------------------------------------------------

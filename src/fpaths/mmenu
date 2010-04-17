@@ -6,10 +6,11 @@
 scr_info {
 	parent = none
 	title = Main Menu
-	help = Text displayed as help
+	help = Use arrows to navigate. Press enter to confirm selection.
 }
 
 scr_obj {
 	type = link
-	id = mmenu
+	value = user
+	label = User and Password Management
 }

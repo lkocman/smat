@@ -28,7 +28,7 @@ Use is subject to license terms.
 # smerr.py - Contains error messages from smat
 
 ERROR_1='Error 1: Unable to get valid smat home. Neither $SMAT_HOME or %s exists. Exiting.\n'
-ERROR_2='Error 2: Object auto id <%d> id <%s>: value for attribute <%s> is not set. Exiting.\n'
+ERROR_2='Error 2: Object auto id <%d> >: value for attribute <%s> is not set. Exiting.\n'
 ERROR_3='Error 3: Can\'t find $DISPLAY. Will now exit.\n'
 ERROR_5='Error 5: Unexpected error during creating dependency list.\n'
 ERROR_6='Error 6: Dependency/Blocking problem.\n'
@@ -42,3 +42,6 @@ ERROR_11='Error 11: Object with given ID <%s> has duplicate attribute <%s> value
 ERROR_12='Error 12: Failed to determinate cmd_priority for object with given id <%s>. Exiting.\n'
 ERROR_13='Error 13: No objects are matching hosted environment\n'
 ERROR_14='SyntaxError 14: Fpath %s line %d:\n Expected format is "(%s | %s) {".\n'
+ERROR_15='SyntaxError 15: Fpath %s line %d:\n Expected format is "<value> = <attribute>".\n'
+ERROR_16='SyntaxError 16: Fpath %s line %d:\n Unsupported attribute "%s".\n'
+ERROR_17='Error 17: Objects of type link can\'t be mixed with other types.\n'
