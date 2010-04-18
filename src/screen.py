@@ -31,6 +31,7 @@ import os, sys
 import smerr
 import obj_loader
 import traceback
+import math
 import curses
 
 class screen:
@@ -537,6 +538,8 @@ class curses_screen:
     TITLE_LINE = 1
     HELP_LINE =  3
 
+    # Keep in mind that no string L_* shouldn't exceed len of 20 chars
+    # Recommended size is 16 chars to have some space arround
     L_GOTO   ="Esc+2=Goto"
     L_BACK   ="Esc+3=Back"
     L_REFR   ="Esc+4=Refresh"
@@ -550,28 +553,66 @@ class curses_screen:
     items_t_menu = [L_GOTO, L_BACK, L_REFR, L_QUIT, L_ENTER_2]
     items_t_selector = [L_GOTO, L_BACK, L_REFR,L_CMD, L_QUIT, L_ENTER]
 
+    m_default = 0
+    m_input = 1
+    m_command = 2
+
 
 #-------------------------------------------------------------------------------
     def __init__(self, host_info, fpath):
         self.scr_inf = screen(host_info, fpath)
-        self.ncols = 0
-        self.nlines = 0
+        self.ncols = 0.0
+        self.nlines = 0.0
         self.stdscr = None
 
         self.i_t_menu_len = 0
         self.i_t_selector_len = 0
         self.get_mn_items_len()
 
+        self.mode = curses_screen.m_default
+
+        self.previous_scr_type = None # to minimalize redrawing
+
         try:
             self.start_text_interface()
-
-            # Just for testing
-            key = self.stdscr.getch()
-
+            self.process_user_input()
             self.exit_text_interface()
-        except Exception, e:
+
+        except curses.error: # Yeah pycurses sometimes need that :-D
+            pass
+
+        except:
             self.exit_text_interface()
-            print e
+            traceback.print_exc()
+
+
+#-------------------------------------------------------------------------------
+    def process_user_input(self):
+        key = None
+        key_steps = 0
+
+        key=self.stdscr.getch()
+        while True:
+            if key == 27: # ESCAPE
+                if self.mode != curses_screen.m_command:
+                    self.mode = curses_screen.m_command
+                else:
+                    self.mode = curses_screen.m_default
+
+                self.stdscr.addstr(5,1,"Mode: %d" % (self.mode))
+                sefl.stdscr.refresh()
+
+                key=self.stdscr.getch()
+                continue
+
+            if self.mode == curses_screen.m_command:
+                if key == ord('0'):
+                    self.exit_text_interface()
+
+                self.mode = curses_screen.m_default
+
+            key=self.stdscr.getch()
+
 
 
 #-------------------------------------------------------------------------------
@@ -592,6 +633,7 @@ class curses_screen:
         self.stdscr.clear()
         self.draw_title()
         self.draw_help()
+        self.draw_menu(force=True)
         self.draw_content()
         self.stdscr.refresh()
 
@@ -613,13 +655,37 @@ class curses_screen:
         pass
 
 #-------------------------------------------------------------------------------
-    def draw_menu(self):
+    def draw_menu(self, force=False):
         menu = None
-        if self.scr_inf.type == screen.t_menu:
-            menu = curses_screen.items_t_menu
+        menu_len = 0
 
+        if self.previous_scr_type == self.scr_inf.type and not force:
+            return
         else:
+            self.previous_scr_type = self.scr_inf.type
+
+        if self.scr_inf.type == screen.t_selector:
             menu = curses_screen.items_t_selector
+            menu_len = self.i_t_selector_len
+        else:
+            menu = curses_screen.items_t_menu
+            menu_len = self.i_t_menu_len
+
+        self.menu_lines = int(math.ceil(float(menu_len * len(menu)) / float(self.ncols)))
+
+        s_line = self.nlines - self.menu_lines
+        n_items_line = self.ncols / curses_screen.MENU_ITEM_SIZE
+
+        c = 0 # currently used cols (20 chars per menu item)
+
+        for i in menu:
+            if not (c / curses_screen.MENU_ITEM_SIZE)  < n_items_line:
+                c = 0;s_line += 1
+
+            self.stdscr.addstr(s_line, c,i)
+            c+= curses_screen.MENU_ITEM_SIZE
+
+
 #-------------------------------------------------------------------------------
 
 
@@ -639,10 +705,10 @@ class curses_screen:
 #-------------------------------------------------------------------------------
 
     def exit_text_interface(self):
+        self.stdscr.keypad(0)
+        curses.nocbreak()
+        curses.echo()
         self.stdscr.clear()
         self.stdscr.refresh()
-        curses.nocbreak()
-        self.stdscr.keypad(0)
-        curses.echo()
         curses.endwin()
-
+        print curses.tigetstr('sgr0') # Mighty weapon to reset terminal
