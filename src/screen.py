@@ -534,12 +534,33 @@ class dependency_exception(Exception):
 #-------------------------------------------------------------------------------
 
 class curses_screen:
-    TITLE_LINE = 2
+    TITLE_LINE = 1
+    HELP_LINE =  3
+
+    L_GOTO   ="Esc+2=Goto"
+    L_BACK   ="Esc+3=Back"
+    L_REFR   ="Esc+4=Refresh"
+    L_CMD    ="Esc+6=Command"
+    L_QUIT   ="Esc+0=Quit"
+    L_ENTER  ="Enter=Do"
+    L_ENTER_2="Enter=Select"
+
+    MENU_ITEM_SIZE=20
+
+    items_t_menu = [L_GOTO, L_BACK, L_REFR, L_QUIT, L_ENTER_2]
+    items_t_selector = [L_GOTO, L_BACK, L_REFR,L_CMD, L_QUIT, L_ENTER]
+
+
+#-------------------------------------------------------------------------------
     def __init__(self, host_info, fpath):
         self.scr_inf = screen(host_info, fpath)
         self.ncols = 0
         self.nlines = 0
         self.stdscr = None
+
+        self.i_t_menu_len = 0
+        self.i_t_selector_len = 0
+        self.get_mn_items_len()
 
         try:
             self.start_text_interface()
@@ -548,34 +569,74 @@ class curses_screen:
             key = self.stdscr.getch()
 
             self.exit_text_interface()
-
         except Exception, e:
             self.exit_text_interface()
             print e
 
 
+#-------------------------------------------------------------------------------
+    def get_mn_items_len(self):
+        for x in curses_screen.items_t_menu: self.i_t_menu_len += len(x)
+        for x in curses_screen.items_t_selector: self.i_t_selector_len += len(x)
 
+#-------------------------------------------------------------------------------
+    def check_screen_size(self):
+        """Function will return false in the size of screen is not big enough."""
+        return True
+
+#-------------------------------------------------------------------------------
     def draw_all_screen(self):
         self.get_yx() # Trying to handle possible resizing of screen
+
+        self.check_screen_size()
         self.stdscr.clear()
         self.draw_title()
+        self.draw_help()
+        self.draw_content()
         self.stdscr.refresh()
 
+#-------------------------------------------------------------------------------
     def get_yx(self):
         self.nlines, self.ncols = self.stdscr.getmaxyx()
 
+#-------------------------------------------------------------------------------
     def draw_title(self):
         start_col = (self.ncols - len(self.scr_inf.title)) // 2
         self.stdscr.addstr(curses_screen.TITLE_LINE, start_col, self.scr_inf.title)
 
+#-------------------------------------------------------------------------------
+    def draw_help(self):
+        self.stdscr.addstr(curses_screen.HELP_LINE, 0, self.scr_inf.help)
+
+#-------------------------------------------------------------------------------
+    def draw_content(self):
+        pass
+
+#-------------------------------------------------------------------------------
+    def draw_menu(self):
+        menu = None
+        if self.scr_inf.type == screen.t_menu:
+            menu = curses_screen.items_t_menu
+
+        else:
+            menu = curses_screen.items_t_selector
+#-------------------------------------------------------------------------------
+
+
     def start_text_interface(self):
         self.stdscr = curses.initscr()
+
+        if not self.check_screen_size():
+            self.exit_text_interface()
+            print "oops"
+            sys.exit(17)
+
         curses.noecho()
         curses.cbreak()
         self.stdscr.keypad(1)
-
         self.draw_all_screen()
 
+#-------------------------------------------------------------------------------
 
     def exit_text_interface(self):
         self.stdscr.clear()
@@ -584,3 +645,4 @@ class curses_screen:
         self.stdscr.keypad(0)
         curses.echo()
         curses.endwin()
+
