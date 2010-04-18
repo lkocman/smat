@@ -560,14 +560,18 @@ class curses_screen:
 
 #-------------------------------------------------------------------------------
     def __init__(self, host_info, fpath):
+        self.host_info = host_info
         self.scr_inf = screen(host_info, fpath)
         self.ncols = 0.0
         self.nlines = 0.0
+        self.cline = 0 # Current active line in content
         self.stdscr = None
-
         self.i_t_menu_len = 0
         self.i_t_selector_len = 0
         self.get_mn_items_len()
+
+        self.stdscr = None
+        self.content_pad = None
 
         self.mode = curses_screen.m_default
 
@@ -587,6 +591,7 @@ class curses_screen:
 
 
 #-------------------------------------------------------------------------------
+
     def process_user_input(self):
         key = None
         key_steps = 0
@@ -600,21 +605,28 @@ class curses_screen:
                     self.mode = curses_screen.m_default
 
                 self.stdscr.addstr(5,1,"Mode: %d" % (self.mode))
-                sefl.stdscr.refresh()
+                self.stdscr.refresh()
 
                 key=self.stdscr.getch()
                 continue
 
             if self.mode == curses_screen.m_command:
                 if key == ord('0'):
-                    self.exit_text_interface()
+                    self.exit_text_interface() # Esc+0
 
+                elif key == ord('3'): # Esc+3
+                    self.goto()
+                # Leave command mode
                 self.mode = curses_screen.m_default
 
             key=self.stdscr.getch()
 
 
 
+#-------------------------------------------------------------------------------
+    def goto(self, fpath="None"):
+        self.scr_inf = screen(self.host_info, self.scr_inf.parent)
+        self.draw_all_screen()
 #-------------------------------------------------------------------------------
     def get_mn_items_len(self):
         for x in curses_screen.items_t_menu: self.i_t_menu_len += len(x)
@@ -629,7 +641,6 @@ class curses_screen:
     def draw_all_screen(self):
         self.get_yx() # Trying to handle possible resizing of screen
 
-        self.check_screen_size()
         self.stdscr.clear()
         self.draw_title()
         self.draw_help()
@@ -640,6 +651,12 @@ class curses_screen:
 #-------------------------------------------------------------------------------
     def get_yx(self):
         self.nlines, self.ncols = self.stdscr.getmaxyx()
+
+#-------------------------------------------------------------------------------
+    def draw_content(self):
+        if self.content_pad == None:
+            self.content_pad = curses.newpad(len(self.scr_inf.objects), \
+                                             self.ncols)
 
 #-------------------------------------------------------------------------------
     def draw_title(self):
@@ -691,12 +708,6 @@ class curses_screen:
 
     def start_text_interface(self):
         self.stdscr = curses.initscr()
-
-        if not self.check_screen_size():
-            self.exit_text_interface()
-            print "oops"
-            sys.exit(17)
-
         curses.noecho()
         curses.cbreak()
         self.stdscr.keypad(1)
@@ -705,10 +716,11 @@ class curses_screen:
 #-------------------------------------------------------------------------------
 
     def exit_text_interface(self):
-        self.stdscr.keypad(0)
-        curses.nocbreak()
-        curses.echo()
         self.stdscr.clear()
         self.stdscr.refresh()
+        curses.nocbreak()
+        self.stdscr.keypad(0)
+        curses.echo()
         curses.endwin()
         print curses.tigetstr('sgr0') # Mighty weapon to reset terminal
+        sys.exit(0)
