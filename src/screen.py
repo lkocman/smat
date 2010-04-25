@@ -55,9 +55,9 @@ class screen:
         self.type = None
         self.url = os.path.join(host_info.smat_home, fpath)
         self.objects = {}
-        self.obj_count = 0
+        self.unsorted_ids = []
         self.read_objects()
-
+        self.obj_count = len(self.objects)
 #---------------------------------------------------------------------------
 
     def get_priority_by_cmd(self, myobj):
@@ -191,9 +191,6 @@ screen.objects[]"""
                 print "appending", cmd_format
                 cmd[cmd_priority].append(cmd_format[1]) # 0 is id
 
-
-        print "`DEBUG: Generated command will be: \n", cmd
-
 #---------------------------------------------------------------------------
 
     def is_mandatory_by_id(self,id):
@@ -288,6 +285,7 @@ screen.objects[]"""
                 raise sobj_exception(smerr.ERROR_10 % (sobj.id))
             else:
                 self.objects[sobj.id] = sobj
+                self.unsorted_ids.append(sobj.id)
 
         except sobj_exception, se:
             print se
@@ -307,7 +305,7 @@ screen.objects[]"""
             print smerr.ERROR_7 % ( self.fpath)
             sys.exit(7)
         objr = obj_loader.obj_loader(screen_file, self.fpath)
-        self.title, self.parent, self.help = objr.get_scr_info()
+        self.title, self.parent, self.help, self.type = objr.get_scr_info()
 
         for obj in objr.get_objects():
             self.add_object(obj)
@@ -482,7 +480,7 @@ necessary data."""
             elif self.type == None:
                 raise sobj_exception(smerr.ERROR_2 % (self.auto_id,screen_obj.s_type))
 
-            if self.type > screen_obj.t_ghost:
+            if self.type != screen_obj.t_ghost:
                 if self.label == None:
                     raise sobj_exception(smerr.ERROR_2 % (self.auto_id, \
                                      screen_obj.s_label))
@@ -537,6 +535,7 @@ class dependency_exception(Exception):
 class curses_screen:
     TITLE_LINE = 1
     HELP_LINE =  3
+    CONTENT_LINE = 5
 
     # Keep in mind that no string L_* shouldn't exceed len of 20 chars
     # Recommended size is 16 chars to have some space arround
@@ -568,6 +567,7 @@ class curses_screen:
         self.stdscr = None
         self.i_t_menu_len = 0
         self.i_t_selector_len = 0
+        self.bounds = (0 ,0) # (y_min, y_max)
         self.get_mn_items_len()
 
         self.stdscr = None
@@ -582,12 +582,11 @@ class curses_screen:
             self.process_user_input()
             self.exit_text_interface()
 
-        except curses.error: # Yeah pycurses sometimes need that :-D
-            pass
-
         except:
-            self.exit_text_interface()
-            traceback.print_exc()
+            self.clear_all_screen()
+            print traceback.print_exc()
+            sys.exit(18)
+
 
 
 #-------------------------------------------------------------------------------
@@ -604,9 +603,6 @@ class curses_screen:
                 else:
                     self.mode = curses_screen.m_default
 
-                self.stdscr.addstr(5,1,"Mode: %d" % (self.mode))
-                self.stdscr.refresh()
-
                 key=self.stdscr.getch()
                 continue
 
@@ -618,6 +614,15 @@ class curses_screen:
                     self.goto()
                 # Leave command mode
                 self.mode = curses_screen.m_default
+            else:
+                if key == curses.KEY_DOWN:
+                    self.cline = (self.cline % self.scr_inf.obj_count)  + 1
+                elif key == curses.KEY_UP:
+                    self.cline = self.cline - 1
+                    if self.cline < 0:
+                        self.cline = self.scr_inf.obj_count - self.cline
+
+            self.draw_content()
 
             key=self.stdscr.getch()
 
@@ -629,8 +634,10 @@ class curses_screen:
         self.draw_all_screen()
 #-------------------------------------------------------------------------------
     def get_mn_items_len(self):
-        for x in curses_screen.items_t_menu: self.i_t_menu_len += len(x)
-        for x in curses_screen.items_t_selector: self.i_t_selector_len += len(x)
+        self.i_t_menu_len = len(curses_screen.items_t_menu) * \
+                                curses_screen.MENU_ITEM_SIZE
+        self.i_t_selector_len = len(curses_screen.items_t_selector) * \
+                                    curses_screen.MENU_ITEM_SIZE
 
 #-------------------------------------------------------------------------------
     def check_screen_size(self):
@@ -645,32 +652,45 @@ class curses_screen:
         self.draw_title()
         self.draw_help()
         self.draw_menu(force=True)
-        self.draw_content()
         self.stdscr.refresh()
+        self.draw_content()
 
 #-------------------------------------------------------------------------------
     def get_yx(self):
         self.nlines, self.ncols = self.stdscr.getmaxyx()
-
 #-------------------------------------------------------------------------------
     def draw_content(self):
         if self.content_pad == None:
             self.content_pad = curses.newpad(len(self.scr_inf.objects), \
                                              self.ncols)
+        i_line = 0
 
+        for obj_key in self.scr_inf.unsorted_ids:
+            mode = curses.A_NORMAL
+            if i_line == self.cline:
+                mode = curses.A_REVERSE
+            self.content_pad.addstr(i_line,0," " + \
+                                    self.scr_inf.objects[obj_key].label, mode)
+            i_line += 1
+
+        border_line = self.avail_lines + self.CONTENT_LINE - 2
+        self.first_pad_line = 0
+
+        if self.cline > self.bounds:
+            pass
+
+        self.content_pad.refresh(self.first_pad_line,0,curses_screen.CONTENT_LINE,0,\
+                                 border_line ,self.ncols)
+
+        self.bounds = (self.first_pad_line,self.first_pad_line+self.avail_lines)
 #-------------------------------------------------------------------------------
     def draw_title(self):
         start_col = (self.ncols - len(self.scr_inf.title)) // 2
-        self.stdscr.addstr(curses_screen.TITLE_LINE, start_col, self.scr_inf.title)
-
+        self.stdscr.addstr(curses_screen.TITLE_LINE, start_col, \
+                           self.scr_inf.title)
 #-------------------------------------------------------------------------------
     def draw_help(self):
         self.stdscr.addstr(curses_screen.HELP_LINE, 0, self.scr_inf.help)
-
-#-------------------------------------------------------------------------------
-    def draw_content(self):
-        pass
-
 #-------------------------------------------------------------------------------
     def draw_menu(self, force=False):
         menu = None
@@ -688,9 +708,13 @@ class curses_screen:
             menu = curses_screen.items_t_menu
             menu_len = self.i_t_menu_len
 
-        self.menu_lines = int(math.ceil(float(menu_len * len(menu)) / float(self.ncols)))
+        menu_lines = int(math.ceil(float(menu_len) / float(self.ncols)))
 
-        s_line = self.nlines - self.menu_lines
+        # avail lines are used for drawing content
+        self.avail_lines = self.nlines - curses_screen.CONTENT_LINE - \
+            menu_lines
+
+        s_line = self.nlines - menu_lines
         n_items_line = self.ncols / curses_screen.MENU_ITEM_SIZE
 
         c = 0 # currently used cols (20 chars per menu item)
@@ -714,13 +738,16 @@ class curses_screen:
         self.draw_all_screen()
 
 #-------------------------------------------------------------------------------
-
-    def exit_text_interface(self):
+    def clear_all_screen(self):
         self.stdscr.clear()
         self.stdscr.refresh()
         curses.nocbreak()
         self.stdscr.keypad(0)
         curses.echo()
         curses.endwin()
-        print curses.tigetstr('sgr0') # Mighty weapon to reset terminal
+        print curses.tigetstr('sgr0')
+#-------------------------------------------------------------------------------
+
+    def exit_text_interface(self):
+        self.clear_all_screen()
         sys.exit(0)

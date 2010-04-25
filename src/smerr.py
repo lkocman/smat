@@ -28,7 +28,7 @@ Use is subject to license terms.
 # smerr.py - Contains error messages from smat
 
 ERROR_1='Error 1: Unable to get valid smat home. Neither $SMAT_HOME or %s exists. Exiting.\n'
-ERROR_2='Error 2: Object auto id <%d> >: value for attribute <%s> is not set. Exiting.\n'
+ERROR_2='Error 2: Object auto id <%d>: value for attribute <%s> is not set. Exiting.\n'
 ERROR_3='Error 3: Can\'t find $DISPLAY. Will now exit.\n'
 ERROR_5='Error 5: Unexpected error during creating dependency list.\n'
 ERROR_6='Error 6: Dependency/Blocking problem.\n'

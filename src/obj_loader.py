@@ -42,6 +42,7 @@ class obj_loader:
         self.__title = None
         self.__help = None
         self.__parent = None
+        self.__type = None
 
         self.parse_lines()
 
@@ -83,8 +84,14 @@ class obj_loader:
 
 #-------------------------------------------------------------------------------
     def get_scr_info(self):
-        """get_scr_info(self) -- returns tuple of (title,parent,help)."""
-        return (self.__title, self.__parent, self.__help)
+        """get_scr_info(self) -- returns tuple of (title,parent,help,type)."""
+        if self.__type == None and len(self.objects) > 0:
+            if self.objects[0].type == screen.screen_obj.t_link:
+                self.__type = screen.screen.t_menu
+            else:
+                self.__type = screen.screen.t_selector
+
+        return (self.__title, self.__parent, self.__help, self.__type)
 #-------------------------------------------------------------------------------
     def __get_list(self, value):
         return value.split()
