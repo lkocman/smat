@@ -564,14 +564,15 @@ class curses_screen:
         self.ncols = 0.0
         self.nlines = 0.0
         self.cline = 0 # Current active line in content
+        self.pline = 0 # previous line
         self.stdscr = None
         self.i_t_menu_len = 0
         self.i_t_selector_len = 0
         self.bounds = (0 ,0) # (y_min, y_max)
         self.get_mn_items_len()
-
         self.stdscr = None
         self.content_pad = None
+        self.bounds_changed = False
 
         self.mode = curses_screen.m_default
 
@@ -615,19 +616,24 @@ class curses_screen:
                 # Leave command mode
                 self.mode = curses_screen.m_default
             else:
-                if key == curses.KEY_DOWN:
-                    self.cline = (self.cline % self.scr_inf.obj_count)  + 1
-                elif key == curses.KEY_UP:
-                    self.cline = self.cline - 1
-                    if self.cline < 0:
-                        self.cline = self.scr_inf.obj_count - self.cline
+                if key == curses.KEY_DOWN or key == ord('j'):
+                    if not self.cline >= self.scr_inf.obj_count -1:
+                        self.pline = self.cline
+                        self.cline = self.cline + 1
 
-            self.draw_content()
+                elif key == curses.KEY_UP or key == ord('k'): # vim-like behavior
+                    if not self.cline == 0:
+                        self.pline = self.cline
+                        self.cline = self.cline - 1
 
+            self.update_content()
             key=self.stdscr.getch()
 
 
 
+#-------------------------------------------------------------------------------
+    def move_cursor(self):
+        self.stdscr.move(curses_screen.CONTENT_LINE -1  + (self.cline % self.avail_lines + 1),0)
 #-------------------------------------------------------------------------------
     def goto(self, fpath="None"):
         self.scr_inf = screen(self.host_info, self.scr_inf.parent)
@@ -656,6 +662,22 @@ class curses_screen:
         self.draw_content()
 
 #-------------------------------------------------------------------------------
+    def check_bounds(self):
+        if self.bounds == (0,0):
+            self.bounds = (0, self.avail_lines)
+            self.__bounds_changed = True
+            return
+        if self.cline > self.bounds[1] or self.cline < self.bounds[0]:
+            if self.scr_inf.obj_count < self.cline+self.avail_lines:
+                self.bounds = (self.cline, self.scr_inf.obj_count)
+                self.__bounds_changed = True
+                return
+            else:
+                self.bounds = (self.cline, self.cline + self.avail_lines)
+                self.__bounds_changed = True
+                return
+        self.bounds_changed = False
+#-------------------------------------------------------------------------------
     def get_yx(self):
         self.nlines, self.ncols = self.stdscr.getmaxyx()
 #-------------------------------------------------------------------------------
@@ -665,24 +687,42 @@ class curses_screen:
                                              self.ncols)
         i_line = 0
 
+        self.check_bounds()
         for obj_key in self.scr_inf.unsorted_ids:
             mode = curses.A_NORMAL
             if i_line == self.cline:
                 mode = curses.A_REVERSE
             self.content_pad.addstr(i_line,0," " + \
-                                    self.scr_inf.objects[obj_key].label, mode)
+                self.scr_inf.objects[obj_key].label, mode)
             i_line += 1
 
-        border_line = self.avail_lines + self.CONTENT_LINE - 2
-        self.first_pad_line = 0
+        border_line = self.avail_lines + self.CONTENT_LINE
+        self.move_cursor()
 
-        if self.cline > self.bounds:
-            pass
-
-        self.content_pad.refresh(self.first_pad_line,0,curses_screen.CONTENT_LINE,0,\
+        self.move_cursor()
+        self.content_pad.refresh(self.bounds[0],0,curses_screen.CONTENT_LINE,0,\
                                  border_line ,self.ncols)
 
-        self.bounds = (self.first_pad_line,self.first_pad_line+self.avail_lines)
+#-------------------------------------------------------------------------------
+    def update_content(self):
+        self.check_bounds()
+
+        if not self.bounds_changed:
+            self.content_pad.addstr(self.pline,0," " + \
+            self.scr_inf.objects[self.scr_inf.unsorted_ids[self.pline]].label, \
+            curses.A_NORMAL)
+
+        self.content_pad.addstr(self.cline,0," " + \
+        self.scr_inf.objects[self.scr_inf.unsorted_ids[self.cline]].label, \
+        curses.A_REVERSE)
+
+        border_line = self.avail_lines + self.CONTENT_LINE
+        self.move_cursor()
+        self.content_pad.refresh(self.bounds[0],0,curses_screen.CONTENT_LINE,0,\
+                                 border_line ,self.ncols)
+#-------------------------------------------------------------------------------
+    def add_obj_to_pad(self):
+        pass
 #-------------------------------------------------------------------------------
     def draw_title(self):
         start_col = (self.ncols - len(self.scr_inf.title)) // 2
@@ -712,7 +752,7 @@ class curses_screen:
 
         # avail lines are used for drawing content
         self.avail_lines = self.nlines - curses_screen.CONTENT_LINE - \
-            menu_lines
+            menu_lines - 2
 
         s_line = self.nlines - menu_lines
         n_items_line = self.ncols / curses_screen.MENU_ITEM_SIZE
@@ -726,10 +766,7 @@ class curses_screen:
             self.stdscr.addstr(s_line, c,i)
             c+= curses_screen.MENU_ITEM_SIZE
 
-
 #-------------------------------------------------------------------------------
-
-
     def start_text_interface(self):
         self.stdscr = curses.initscr()
         curses.noecho()
