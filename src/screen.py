@@ -644,7 +644,6 @@ class curses_screen:
                                 curses_screen.MENU_ITEM_SIZE
         self.i_t_selector_len = len(curses_screen.items_t_selector) * \
                                     curses_screen.MENU_ITEM_SIZE
-
 #-------------------------------------------------------------------------------
     def check_screen_size(self):
         """Function will return false in the size of screen is not big enough."""
@@ -706,7 +705,6 @@ class curses_screen:
 #-------------------------------------------------------------------------------
     def update_content(self):
         self.check_bounds()
-
         if not self.bounds_changed:
             self.content_pad.addstr(self.pline,0," " + \
             self.scr_inf.objects[self.scr_inf.unsorted_ids[self.pline]].label, \
@@ -718,7 +716,7 @@ class curses_screen:
 
         border_line = self.avail_lines + self.CONTENT_LINE
         self.move_cursor()
-        self.content_pad.refresh(self.bounds[0],0,curses_screen.CONTENT_LINE,0,\
+        self.content_pad.noutrefresh(self.bounds[0],0,curses_screen.CONTENT_LINE,0,\
                                  border_line ,self.ncols)
 #-------------------------------------------------------------------------------
     def add_obj_to_pad(self):
