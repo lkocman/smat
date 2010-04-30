@@ -661,19 +661,27 @@ class curses_screen:
         self.draw_content()
 
 #-------------------------------------------------------------------------------
+    def draw_screen(self):
+        """draw_screen(self) -- draws everything except of content pad"""
+        self.draw_title()
+        self.draw_help()
+        self.draw_menu(force=True)
+        self.stdscr.refresh()
+#-------------------------------------------------------------------------------
     def check_bounds(self):
         if self.bounds == (0,0):
             self.bounds = (0, self.avail_lines)
-            self.__bounds_changed = True
+            self.bounds_changed = True
             return
+
         if self.cline > self.bounds[1] or self.cline < self.bounds[0]:
             if self.scr_inf.obj_count < self.cline+self.avail_lines:
                 self.bounds = (self.cline, self.scr_inf.obj_count)
-                self.__bounds_changed = True
+                self.bounds_changed = True
                 return
             else:
                 self.bounds = (self.cline, self.cline + self.avail_lines)
-                self.__bounds_changed = True
+                self.bounds_changed = True
                 return
         self.bounds_changed = False
 #-------------------------------------------------------------------------------
@@ -691,7 +699,7 @@ class curses_screen:
             mode = curses.A_NORMAL
             if i_line == self.cline:
                 mode = curses.A_REVERSE
-            self.content_pad.addstr(i_line,0," " + \
+            self.content_pad.addstr(i_line,1,\
                 self.scr_inf.objects[obj_key].label, mode)
             i_line += 1
 
@@ -703,12 +711,18 @@ class curses_screen:
                                  border_line ,self.ncols)
 
 #-------------------------------------------------------------------------------
+    def cleanup_cnt_bg(self):
+        self.stdscr.erase()
+        self.draw_screen()
+#-------------------------------------------------------------------------------
     def update_content(self):
         self.check_bounds()
-        if not self.bounds_changed:
-            self.content_pad.addstr(self.pline,0," " + \
-            self.scr_inf.objects[self.scr_inf.unsorted_ids[self.pline]].label, \
-            curses.A_NORMAL)
+        if self.bounds_changed:
+            self.cleanup_cnt_bg()
+
+        self.content_pad.addstr(self.pline,0, " " +  \
+        self.scr_inf.objects[self.scr_inf.unsorted_ids[self.pline]].label, \
+        curses.A_NORMAL)
 
         self.content_pad.addstr(self.cline,0," " + \
         self.scr_inf.objects[self.scr_inf.unsorted_ids[self.cline]].label, \
