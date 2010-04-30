@@ -633,7 +633,8 @@ class curses_screen:
 
 #-------------------------------------------------------------------------------
     def move_cursor(self):
-        self.stdscr.move(curses_screen.CONTENT_LINE -1  + (self.cline % self.avail_lines + 1),0)
+        cursor_line = curses_screen.CONTENT_LINE  + self.cline - self.bounds[0]
+        self.stdscr.move(cursor_line ,0)
 #-------------------------------------------------------------------------------
     def goto(self, fpath="None"):
         self.scr_inf = screen(self.host_info, self.scr_inf.parent)
@@ -669,17 +670,21 @@ class curses_screen:
         self.stdscr.refresh()
 #-------------------------------------------------------------------------------
     def check_bounds(self):
-        if self.bounds == (0,0):
+        if self.bounds == (0,0): # (y_min, y_max)
             self.bounds = (0, self.avail_lines)
             self.bounds_changed = True
             return
 
         if self.cline > self.bounds[1] or self.cline < self.bounds[0]:
-            if self.scr_inf.obj_count < self.cline+self.avail_lines:
-                self.bounds = (self.cline, self.scr_inf.obj_count)
-                self.bounds_changed = True
-                return
-            else:
+            if self.cline > self.bounds[1]: # scrolling down
+                if self.bounds[1] + 1 < self.scr_inf.obj_count:
+                    self.bounds = (self.bounds[0] + 1, self.bounds[1] + 1)
+                    self.bounds_changed = True
+                else:
+                    self.bounds = (self.bounds[0] + 1, self.scr_inf.obj_count)
+                    self.bounds_changed = True
+
+            else: # scrolling up
                 self.bounds = (self.cline, self.cline + self.avail_lines)
                 self.bounds_changed = True
                 return
