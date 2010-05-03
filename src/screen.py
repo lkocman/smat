@@ -188,7 +188,6 @@ screen.objects[]"""
             q_values.sort();q_values.reverse()
 
             for cmd_format in q_values:
-                print "appending", cmd_format
                 cmd[cmd_priority].append(cmd_format[1]) # 0 is id
 
 #---------------------------------------------------------------------------
@@ -256,7 +255,6 @@ screen.objects[]"""
 
         if len(blocking) != 0:
             for block_key in blocking:
-                print block_key
                 if ids.__contains__(block_key):
                     raise dependency_exception(smerr.ERROR_6)
 
@@ -582,8 +580,7 @@ class curses_screen:
             self.start_text_interface()
             self.process_user_input()
             self.exit_text_interface()
-
-        except:
+        except Exception:
             self.clear_all_screen()
             print traceback.print_exc()
             sys.exit(18)
@@ -693,19 +690,26 @@ class curses_screen:
     def get_yx(self):
         self.nlines, self.ncols = self.stdscr.getmaxyx()
 #-------------------------------------------------------------------------------
+    def add_cnt_item(self, obj, line, mode, col=0):
+        """add_cnt_item(text, line, mode, col=0)"""
+        self.content_pad.addstr(line, col, " " + obj.label, mode)
+#-------------------------------------------------------------------------------
     def draw_content(self):
+        """draw_content() function will draw each non-ghost object on screen"""
         if self.content_pad == None:
             self.content_pad = curses.newpad(len(self.scr_inf.objects), \
                                              self.ncols)
         i_line = 0
 
         self.check_bounds()
+
         for obj_key in self.scr_inf.unsorted_ids:
+            if self.scr_inf.objects[obj_key].type == screen_obj.t_ghost:
+                pass
             mode = curses.A_NORMAL
             if i_line == self.cline:
                 mode = curses.A_REVERSE
-            self.content_pad.addstr(i_line,1,\
-                self.scr_inf.objects[obj_key].label, mode)
+            self.add_cnt_item(self.scr_inf.objects[obj_key], i_line, mode)
             i_line += 1
 
         border_line = self.avail_lines + self.CONTENT_LINE

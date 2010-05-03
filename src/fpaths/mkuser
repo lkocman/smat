@@ -53,3 +53,44 @@ scr_obj {
 	cmd =  /usr/sbin/useradd
 	arg_format = -s $shell
 }
+
+scr_obj {
+	id = home_dir
+	type = text
+	label = Home directory
+	cmd = /usr/sbin/useradd
+	arg_format = -d $home_dir
+}
+
+scr_obj {
+	id = cr_homedir
+	type = boolean
+	label = Create home directory
+	cmd = /usr/sbin/useradd
+	arg_format = -m
+}
+
+scr_obj {
+	id = comment
+	type = text
+	label = Comment
+	cmd = /usr/sbin/useradd
+	arg_format = -c $comment
+}
+
+scr_obj {
+	id = usr_expire
+	type = text
+	label = User expiration (YYYY-MM-DD)
+	cmd = /usr/sbin/useradd
+	arg_format = -e $usr_expire
+}
+
+scr_obj {
+	id = usr_inactive
+	type = text
+	label = Inactive after expiration (days)
+	cmd = /usr/sbin/useradd
+	arg_format = -f $usr_inactive
+}
+
