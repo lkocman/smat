@@ -55,8 +55,10 @@ class screen:
         self.type = None
         self.url = os.path.join(host_info.smat_home, fpath)
         self.objects = {}
+        self.ghosts = {}
         self.unsorted_ids = []
         self.read_objects()
+        # used for curses purposes
         self.obj_count = len(self.objects)
 #---------------------------------------------------------------------------
 
@@ -282,8 +284,15 @@ screen.objects[]"""
             if self.objects.has_key(sobj.id):
                 raise sobj_exception(smerr.ERROR_10 % (sobj.id))
             else:
-                self.objects[sobj.id] = sobj
-                self.unsorted_ids.append(sobj.id)
+                """
+                Ghosts  objects needs to be
+                """
+
+                if sobj.type == screen_obj.t_ghost:
+                    pass
+                else:
+                    self.objects[sobj.id] = sobj
+                    self.unsorted_ids.append(sobj.id)
 
         except sobj_exception, se:
             print se
@@ -305,8 +314,10 @@ screen.objects[]"""
         objr = obj_loader.obj_loader(screen_file, self.fpath)
         self.title, self.parent, self.help, self.type = objr.get_scr_info()
 
+        # needs some extra steps that's why foreach
         for obj in objr.get_objects():
             self.add_object(obj)
+
 
 #        except TypeError, e:
  #           print e
@@ -580,7 +591,7 @@ class curses_screen:
             self.start_text_interface()
             self.process_user_input()
             self.exit_text_interface()
-        except Exception:
+        except:
             self.clear_all_screen()
             print traceback.print_exc()
             sys.exit(18)
@@ -693,6 +704,25 @@ class curses_screen:
     def add_cnt_item(self, obj, line, mode, col=0):
         """add_cnt_item(text, line, mode, col=0)"""
         self.content_pad.addstr(line, col, " " + obj.label, mode)
+
+        if self.scr_inf.type == screen.t_selector:
+            type_sign = {
+                screen_obj.t_boolean : " ?",
+                screen_obj.t_text : "",
+                screen_obj.t_list : " (,)",
+                screen_obj.t_number: " #"
+            }
+            LB = "["
+            RB = "["
+            col = 30 # todo ...
+            self.content_pad.addstr(line, col, LB + obj.get_value() + RB, mode)
+            self.content_pad.addstr(line, \
+                self.ncols - len(type_sign[obj.type]) -1, type_sign[obj.type],\
+                mode)
+
+
+
+
 #-------------------------------------------------------------------------------
     def draw_content(self):
         """draw_content() function will draw each non-ghost object on screen"""

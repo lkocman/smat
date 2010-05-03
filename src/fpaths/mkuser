@@ -86,6 +86,14 @@ scr_obj {
 	arg_format = -e $usr_expire
 }
 
+scr_obj { # object for test purpose only
+	id = ghost_test
+	type = ghost
+	cmd = /usr/sbin/usermod
+	arg_format = $user_name
+	arg_priority = -1
+}
+
 scr_obj {
 	id = usr_inactive
 	type = text

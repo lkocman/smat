@@ -39,6 +39,7 @@ class obj_loader:
         self.lines = lines
         self.cur_line_n = 0
         self.objects=[]
+        self.ghosts=[]
         self.__title = None
         self.__help = None
         self.__parent = None
