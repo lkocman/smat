@@ -143,7 +143,8 @@ class obj_loader:
                 self.objects[len(self.objects) -1].mandatory = m
 
             elif attr == screen.screen_obj.s_label: # label
-                self.objects[len(self.objects) -1].label = value
+                self.objects[len(self.objects) -1].label = \
+                    value[:screen.screen_obj.c_max_label_len]
 
             elif attr == screen.screen_obj.s_cmd: # cmd
                 self.objects[len(self.objects) -1].cmd = value

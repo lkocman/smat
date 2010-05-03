@@ -73,7 +73,7 @@ class screen:
             for obj_key in self.objects:
 
                 if self.objects[obj_key].cmd == myobj.cmd  \
-                and self.objects[obj_key].cmd_priority > ret_prior:
+                   and self.objects[obj_key].cmd_priority > ret_prior:
                     ret_prior = self.objects[obj_key].cmd_priority
 
         if ret_prior == None:
@@ -97,7 +97,7 @@ class screen:
                 if priorities.has_key(obj.cmd_priority):
                     if priorities[obj.cmd_priority].__contains__(obj.arg_priority):
                         raise sobj_exception(smerr.ERROR_11 % (obj.id,
-                        "obj.arg_priority", obj.arg_priority))
+                                                               "obj.arg_priority", obj.arg_priority))
 
                     priorities[obj.cmd_priority].append(obj.arg_priority)
 
@@ -152,7 +152,7 @@ screen.objects[]"""
                 if obj.get_arg_priority() < 0: # -1 -2 ...
                     if not cmd_queue.has_key(obj.get_cmd_priority()):
                         cmd_queue[obj.get_cmd_priority()] = [[abs(obj.get_arg_priority()),
-                                           obj.get_arg_format()]]
+                                                              obj.get_arg_format()]]
                         continue
                     else:
                         cmd_queue[obj.get_cmd_priority()].append([abs(obj.get_arg_priority()),obj.get_arg_format()])
@@ -289,6 +289,7 @@ screen.objects[]"""
                 """
 
                 if sobj.type == screen_obj.t_ghost:
+                    # TODO: needs to be processed
                     pass
                 else:
                     self.objects[sobj.id] = sobj
@@ -318,11 +319,6 @@ screen.objects[]"""
         for obj in objr.get_objects():
             self.add_object(obj)
 
-
-#        except TypeError, e:
- #           print e
- #           print smerr.ERROR_13
-            #raise sobj_exception(smerr.ERROR_13)
 
 
 #-------------------------------------------------------------------------------
@@ -369,6 +365,7 @@ class screen_obj:
     s_dependency = "dependency"
     s_mandatory = "mandatory"
 
+    c_max_label_len = 40
 
 
 #-------------------------------------------------------------------------------
@@ -405,19 +402,36 @@ class screen_obj:
 #-------------------------------------------------------------------------------
 
     def get_value(self):
+        """get_value()
+        function will return non-none value of the given object. In case
+        of boolean objects, value will be taken based on current obj.value.
+        Lists will be joined into string concatenated by self.list_separator."""
+
+        empty_string = ""
+        value_true = "True"
+        value_false = "False"
+
         try:
             if self.type == screen_obj.t_list: # A list type
-                return str(self.list_separator.join(self.value))
+                if self.value == None:
+                    return empty_string
+
+                return self.list_separator.join(self.value)
 
             elif self.type == screen_obj.t_boolean: # Boolean type
+
                 if self.value == True:
-                    return str(self.value_true)
+                    return value_true
+
                 elif self.value == False:
-                    return str(self.value_false)
-                else:
-                    return None
+                    return value_false
+
+                else: return empty_string
+
             else:
-                return str(self.value)
+                if self.value == None:
+                    return empty_string
+                else: return str(self.value)
 
         except (TypeError, AttributeError):
             print smerr.ERROR_9
@@ -492,12 +506,12 @@ necessary data."""
             if self.type != screen_obj.t_ghost:
                 if self.label == None:
                     raise sobj_exception(smerr.ERROR_2 % (self.auto_id, \
-                                     screen_obj.s_label))
+                                                          screen_obj.s_label))
 
             if self.type == screen_obj.t_list:
                 if self.list_separator == None:
                     raise sobj_exception(smerr.ERROR_2 % (self.auto_id, \
-                                     screen_obj.s_list_separator))
+                                                          screen_obj.s_list_separator))
 
             if self.type == screen_obj.t_boolean and \
                self.cmd_priority != None and \
@@ -650,9 +664,9 @@ class curses_screen:
 #-------------------------------------------------------------------------------
     def get_mn_items_len(self):
         self.i_t_menu_len = len(curses_screen.items_t_menu) * \
-                                curses_screen.MENU_ITEM_SIZE
+            curses_screen.MENU_ITEM_SIZE
         self.i_t_selector_len = len(curses_screen.items_t_selector) * \
-                                    curses_screen.MENU_ITEM_SIZE
+            curses_screen.MENU_ITEM_SIZE
 #-------------------------------------------------------------------------------
     def check_screen_size(self):
         """Function will return false in the size of screen is not big enough."""
@@ -713,12 +727,12 @@ class curses_screen:
                 screen_obj.t_number: " #"
             }
             LB = "["
-            RB = "["
-            col = 30 # todo ...
+            RB = "]"
+            col = 40 # TODO no magical numbers ...
             self.content_pad.addstr(line, col, LB + obj.get_value() + RB, mode)
             self.content_pad.addstr(line, \
-                self.ncols - len(type_sign[obj.type]) -1, type_sign[obj.type],\
-                mode)
+                                    self.ncols - len(type_sign[obj.type]) -1, type_sign[obj.type],\
+                                    mode)
 
 
 
@@ -760,17 +774,17 @@ class curses_screen:
             self.cleanup_cnt_bg()
 
         self.content_pad.addstr(self.pline,0, " " +  \
-        self.scr_inf.objects[self.scr_inf.unsorted_ids[self.pline]].label, \
-        curses.A_NORMAL)
+                                self.scr_inf.objects[self.scr_inf.unsorted_ids[self.pline]].label, \
+                                curses.A_NORMAL)
 
         self.content_pad.addstr(self.cline,0," " + \
-        self.scr_inf.objects[self.scr_inf.unsorted_ids[self.cline]].label, \
-        curses.A_REVERSE)
+                                self.scr_inf.objects[self.scr_inf.unsorted_ids[self.cline]].label, \
+                                curses.A_REVERSE)
 
         border_line = self.avail_lines + self.CONTENT_LINE
         self.move_cursor()
         self.content_pad.noutrefresh(self.bounds[0],0,curses_screen.CONTENT_LINE,0,\
-                                 border_line ,self.ncols)
+                                     border_line ,self.ncols)
 #-------------------------------------------------------------------------------
     def add_obj_to_pad(self):
         pass
