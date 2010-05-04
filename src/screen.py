@@ -57,9 +57,11 @@ class screen:
         self.objects = {}
         self.ghosts = {}
         self.unsorted_ids = []
+        self.longest_label = 0 # experimental use
+
         self.read_objects()
-        # used for curses purposes
-        self.obj_count = len(self.objects)
+        self.obj_count = len(self.objects) # curses purpose
+
 #---------------------------------------------------------------------------
 
     def get_priority_by_cmd(self, myobj):
@@ -292,6 +294,15 @@ screen.objects[]"""
                     # TODO: needs to be processed
                     pass
                 else:
+                    #
+                    # Experiments with setting up column for obj value (curses)
+                    #
+                    l = len(sobj.label)
+                    if self.longest_label < l:
+                        self.longest_label = l
+
+                    del(l)
+
                     self.objects[sobj.id] = sobj
                     self.unsorted_ids.append(sobj.id)
 
@@ -728,11 +739,11 @@ class curses_screen:
             }
             LB = "["
             RB = "]"
-            col = 40 # TODO no magical numbers ...
+            col = self.scr_inf.longest_label + 5 # TODO no magical numbers ...
             self.content_pad.addstr(line, col, LB + obj.get_value() + RB, mode)
             self.content_pad.addstr(line, \
-                                    self.ncols - len(type_sign[obj.type]) -1, type_sign[obj.type],\
-                                    mode)
+            self.ncols - len(type_sign[obj.type]) -1, type_sign[obj.type],\
+            mode)
 
 
 
@@ -785,9 +796,6 @@ class curses_screen:
         self.move_cursor()
         self.content_pad.noutrefresh(self.bounds[0],0,curses_screen.CONTENT_LINE,0,\
                                      border_line ,self.ncols)
-#-------------------------------------------------------------------------------
-    def add_obj_to_pad(self):
-        pass
 #-------------------------------------------------------------------------------
     def draw_title(self):
         start_col = (self.ncols - len(self.scr_inf.title)) // 2
