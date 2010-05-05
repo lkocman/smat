@@ -615,13 +615,17 @@ class curses_screen:
         try:
             self.start_text_interface()
             self.process_user_input()
-            self.exit_text_interface()
+
+        except SystemExit:
+            pass
+
         except:
             self.clear_all_screen()
             print traceback.print_exc()
             sys.exit(18)
 
 
+        self.exit_text_interface()
 
 #-------------------------------------------------------------------------------
 
