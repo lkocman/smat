@@ -1,0 +1,104 @@
+#
+# Fpath: user 
+#
+
+
+scr_info {
+	parent = mmenu
+	title = User and Password Management
+	help = Use arrows to navigate. Press enter to confirm selection.
+}
+
+scr_obj {
+	id = user_name
+	type = text
+	mandatory = true
+	label = User name
+	cmd = /usr/sbin/useradd
+	cmd_priority = 0
+	arg_format = $user_name
+	arg_priority = -1
+}
+
+scr_obj {
+	id = primary_group
+	type = text
+	label = Primary Group
+	cmd = /usr/sbin/useradd
+	arg_format = -g $primary_group
+}
+
+
+scr_obj {
+	id = groups
+	type = list
+	list_separator = ,
+	label = Groups
+	cmd = /usr/sbin/useradd
+	arg_format = -G $groups
+}
+
+scr_obj {
+	id = uid
+	type = number
+	label = User ID
+	cmd = /usr/sbin/useradd
+	arg_format = -n $uid
+}
+
+scr_obj {
+	id = shell
+	type = text
+	label = Shell
+	cmd =  /usr/sbin/useradd
+	arg_format = -s $shell
+}
+
+scr_obj {
+	id = home_dir
+	type = text
+	label = Home directory
+	cmd = /usr/sbin/useradd
+	arg_format = -d $home_dir
+}
+
+scr_obj {
+	id = cr_homedir
+	type = boolean
+	label = Create home directory
+	cmd = /usr/sbin/useradd
+	arg_format = -m
+}
+
+scr_obj {
+	id = comment
+	type = text
+	label = Comment
+	cmd = /usr/sbin/useradd
+	arg_format = -c $comment
+}
+
+scr_obj {
+	id = usr_expire
+	type = text
+	label = User expiration (YYYY-MM-DD)
+	cmd = /usr/sbin/useradd
+	arg_format = -e $usr_expire
+}
+
+scr_obj { # object for test purpose only
+	id = ghost_test
+	type = ghost
+	cmd = /usr/sbin/usermod
+	arg_format = $user_name
+	arg_priority = -1
+}
+
+scr_obj {
+	id = usr_inactive
+	type = text
+	label = Inactive after expiration (days)
+	cmd = /usr/sbin/useradd
+	arg_format = -f $usr_inactive
+}
+

@@ -1,0 +1,16 @@
+#
+# mmenu - Default smat path
+#
+
+
+scr_info {
+	parent = none
+	title = Main Menu
+	help = Use arrows to navigate. Press enter to confirm selection.
+}
+
+scr_obj {
+	type = link
+	value = user
+	label = User and Password Management
+}

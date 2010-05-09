@@ -1,0 +1,16 @@
+#
+# Fpath: user 
+#
+
+
+scr_info {
+	parent = mmenu
+	title = User and Password Management
+	help = Use arrows to navigate. Press enter to confirm selection.
+}
+
+scr_obj {
+	type = link
+	value = mkuser
+	label = Make a user
+}
