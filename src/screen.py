@@ -34,6 +34,18 @@ import traceback
 import math
 import curses
 
+#-------------------------------------------------------------------------------
+
+def get_longest_value_from_dict(mydict):
+    """get_longest_value_from_dict(mydict)"""
+    l = 0
+    for key in mydict.keys():
+        cl = len(mydict[key])
+        if cl > l:
+            l = cl
+    return l
+
+#-------------------------------------------------------------------------------
 class screen:
     """Base class of the entire project"""
 
@@ -570,7 +582,9 @@ class curses_screen:
     TITLE_LINE = 1
     HELP_LINE =  3
     CONTENT_LINE = 5
-
+    
+    VALUE_RES_COLS = 15
+    
     # Keep in mind that no string L_* shouldn't exceed len of 20 chars
     # Recommended size is 16 chars to have some space arround
     L_GOTO   ="Esc+2=Goto"
@@ -590,9 +604,23 @@ class curses_screen:
     m_input = 1
     m_command = 2
 
+    type_sign = {
+        screen_obj.t_boolean : " ?",
+        screen_obj.t_text : "",
+        screen_obj.t_list : " (,)",
+        screen_obj.t_number: " #"
+    }
+   
+    # get the longest type_sign
+    
+    max_ts_len = get_longest_value_from_dict(type_sign)
+    
+    LB = "["
+    RB = "]"
 
 #-------------------------------------------------------------------------------
     def __init__(self, host_info, fpath):
+        """curses_screen(host_info,fpath)"""
         self.host_info = host_info
         self.scr_inf = screen(host_info, fpath)
         self.ncols = 0.0
@@ -629,6 +657,14 @@ class curses_screen:
 
 #-------------------------------------------------------------------------------
 
+    def dismiss_user_action(self):
+        """dismiss_user_action(self)
+        function should be called before usage of goto() or reset() """
+        self.cline = self.pline = 0
+        self.bounds = (0,0)
+        self.clear_screen()
+        
+#-------------------------------------------------------------------------------
     def process_user_input(self):
         key = None
         key_steps = 0
@@ -649,7 +685,7 @@ class curses_screen:
                     self.exit_text_interface() # Esc+0
 
                 elif key == ord('3'): # Esc+3
-                    self.goto()
+                    self.goto(self.scr_inf.parent)
                 # Leave command mode
                 self.mode = curses_screen.m_default
             else:
@@ -673,9 +709,13 @@ class curses_screen:
         cursor_line = curses_screen.CONTENT_LINE  + self.cline - self.bounds[0]
         self.stdscr.move(cursor_line ,0)
 #-------------------------------------------------------------------------------
-    def goto(self, fpath="None"):
-        self.scr_inf = screen(self.host_info, self.scr_inf.parent)
-        self.draw_all_screen()
+    def goto(self, fpath="mmenu"):
+        if fpath != None:
+            self.dismiss_user_action()
+            self.scr_inf = screen(self.host_info, self.scr_inf.parent)
+            self.draw_all_screen()
+        else: # User probably hit back when in mmenu
+            self.exit_text_interface()
 #-------------------------------------------------------------------------------
     def get_mn_items_len(self):
         self.i_t_menu_len = len(curses_screen.items_t_menu) * \
@@ -691,7 +731,7 @@ class curses_screen:
     def draw_all_screen(self):
         self.get_yx() # Trying to handle possible resizing of screen
 
-        self.stdscr.clear()
+        self.stdscr.erase()
         self.draw_title()
         self.draw_help()
         self.draw_menu(force=True)
@@ -706,6 +746,7 @@ class curses_screen:
         self.draw_menu(force=True)
         self.stdscr.refresh()
 #-------------------------------------------------------------------------------
+
     def check_bounds(self):
         if self.bounds == (0,0): # (y_min, y_max)
             self.bounds = (0, self.avail_lines)
@@ -726,31 +767,33 @@ class curses_screen:
                 self.bounds_changed = True
                 return
         self.bounds_changed = False
+        
 #-------------------------------------------------------------------------------
+
     def get_yx(self):
         self.nlines, self.ncols = self.stdscr.getmaxyx()
+        
+        if self.ncols < 80:
+            self.__value_col = 50
+        else:
+            self.__value_col = self.ncols - 20
+        
 #-------------------------------------------------------------------------------
+
     def add_cnt_item(self, obj, line, mode, col=0):
         """add_cnt_item(text, line, mode, col=0)"""
         self.content_pad.addstr(line, col, " " + obj.label, mode)
 
+
         if self.scr_inf.type == screen.t_selector:
-            type_sign = {
-                screen_obj.t_boolean : " ?",
-                screen_obj.t_text : "",
-                screen_obj.t_list : " (,)",
-                screen_obj.t_number: " #"
-            }
-            LB = "["
-            RB = "]"
-            col = self.scr_inf.longest_label + 5 # TODO no magical numbers ...
-            self.content_pad.addstr(line, col, LB + obj.get_value() + RB, mode)
+            
+            col = self.__value_col
+            self.content_pad.addstr(line, col, curses_screen.LB + 
+                obj.get_value() + curses_screen.RB, mode)
             self.content_pad.addstr(line, \
-            self.ncols - len(type_sign[obj.type]) -1, type_sign[obj.type],\
+            self.ncols - len(curses_screen.type_sign[obj.type]) -1,
+                curses_screen.type_sign[obj.type],\
             mode)
-
-
-
 
 #-------------------------------------------------------------------------------
     def draw_content(self):
@@ -787,28 +830,29 @@ class curses_screen:
         self.check_bounds()
         if self.bounds_changed:
             self.cleanup_cnt_bg()
+            
+        self.add_cnt_item(self.scr_inf.objects[self.scr_inf.unsorted_ids[self.pline]], self.pline, curses.A_NORMAL)
 
-        self.content_pad.addstr(self.pline,0, " " +  \
-                                self.scr_inf.objects[self.scr_inf.unsorted_ids[self.pline]].label, \
-                                curses.A_NORMAL)
-
-        self.content_pad.addstr(self.cline,0," " + \
-                                self.scr_inf.objects[self.scr_inf.unsorted_ids[self.cline]].label, \
-                                curses.A_REVERSE)
+        self.add_cnt_item(self.scr_inf.objects[self.scr_inf.unsorted_ids[self.cline]], self.cline, curses.A_REVERSE)
 
         border_line = self.avail_lines + self.CONTENT_LINE
         self.move_cursor()
         self.content_pad.noutrefresh(self.bounds[0],0,curses_screen.CONTENT_LINE,0,\
                                      border_line ,self.ncols)
 #-------------------------------------------------------------------------------
+
     def draw_title(self):
         start_col = (self.ncols - len(self.scr_inf.title)) // 2
         self.stdscr.addstr(curses_screen.TITLE_LINE, start_col, \
                            self.scr_inf.title)
+        
 #-------------------------------------------------------------------------------
+
     def draw_help(self):
         self.stdscr.addstr(curses_screen.HELP_LINE, 0, self.scr_inf.help)
+        
 #-------------------------------------------------------------------------------
+
     def draw_menu(self, force=False):
         menu = None
         menu_len = 0
@@ -844,6 +888,7 @@ class curses_screen:
             c+= curses_screen.MENU_ITEM_SIZE
 
 #-------------------------------------------------------------------------------
+
     def start_text_interface(self):
         self.stdscr = curses.initscr()
         curses.noecho()
@@ -852,7 +897,15 @@ class curses_screen:
         self.draw_all_screen()
 
 #-------------------------------------------------------------------------------
+
+    def clear_screen(self):
+        del(self.content_pad)
+        self.content_pad = None
+        self.cleanup_cnt_bg()
+        
+#-------------------------------------------------------------------------------
     def clear_all_screen(self):
+        """clear_all_screen()"""
         self.stdscr.clear()
         self.stdscr.refresh()
         curses.nocbreak()
@@ -865,3 +918,4 @@ class curses_screen:
     def exit_text_interface(self):
         self.clear_all_screen()
         sys.exit(0)
+
