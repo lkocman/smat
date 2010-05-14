@@ -699,6 +699,11 @@ class curses_screen:
                         self.pline = self.cline
                         self.cline = self.cline - 1
 
+                elif key == curses.KEY_ENTER or key == 10: # 343 WTF?
+                    if self.scr_inf.type == screen.t_menu:
+                        self.goto(self.scr_inf.objects[\
+                            self.scr_inf.unsorted_ids[self.cline]])
+                    
             self.update_content()
             key=self.stdscr.getch()
 
