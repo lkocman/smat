@@ -59,6 +59,17 @@ class screen:
 
     def __init__(self, host_info, fpath):
         """screen(fpath)"""
+        self.set_default_values(host_info, fpath)
+        self.read_objects()
+
+#---------------------------------------------------------------------------
+    def get_obj_count(self):
+        """get_obj_count() -- should be called after each read_objects()"""
+        self.obj_count = len(self.objects) # curses purpose
+        
+#---------------------------------------------------------------------------
+    def set_default_values(self,host_info,fpath):
+        self.title = None
         self.title = None
         self.help = None
         self.parent = None
@@ -70,9 +81,6 @@ class screen:
         self.ghosts = {}
         self.unsorted_ids = []
         self.longest_label = 0 # experimental use
-
-        self.read_objects()
-        self.obj_count = len(self.objects) # curses purpose
 
 #---------------------------------------------------------------------------
 
@@ -342,7 +350,7 @@ screen.objects[]"""
         for obj in objr.get_objects():
             self.add_object(obj)
 
-
+        self.get_obj_count()
 
 #-------------------------------------------------------------------------------
 
@@ -662,7 +670,7 @@ class curses_screen:
         function should be called before usage of goto() or reset() """
         self.cline = self.pline = 0
         self.bounds = (0,0)
-        self.clear_screen()
+        self.clear_screen(False) # By setting up False, nothing will be redrawed
         
 #-------------------------------------------------------------------------------
     def process_user_input(self):
@@ -670,6 +678,7 @@ class curses_screen:
         key_steps = 0
 
         key=self.stdscr.getch()
+        
         while True:
             if key == 27: # ESCAPE
                 if self.mode != curses_screen.m_command:
@@ -701,14 +710,23 @@ class curses_screen:
 
                 elif key == curses.KEY_ENTER or key == 10: # 343 WTF?
                     if self.scr_inf.type == screen.t_menu:
+                        
                         self.goto(self.scr_inf.objects[\
-                            self.scr_inf.unsorted_ids[self.cline]])
+                            self.scr_inf.unsorted_ids[self.cline]].value)
+                    else: # Enter edit mode
+                        self.edit_cobj_value()
                     
             self.update_content()
             key=self.stdscr.getch()
 
 
 
+#-------------------------------------------------------------------------------
+    def get_current_object(self):
+        return self.scr_inf.objects[self.scr_inf.unsorted_ids[self.cline]]
+#-------------------------------------------------------------------------------
+    def edit_cobj_value(self):
+        self.scr_inf.objects[self.scr_inf[obj
 #-------------------------------------------------------------------------------
     def move_cursor(self):
         cursor_line = curses_screen.CONTENT_LINE  + self.cline - self.bounds[0]
@@ -717,7 +735,7 @@ class curses_screen:
     def goto(self, fpath="mmenu"):
         if fpath != None:
             self.dismiss_user_action()
-            self.scr_inf = screen(self.host_info, self.scr_inf.parent)
+            self.scr_inf = screen(self.host_info, fpath)
             self.draw_all_screen()
         else: # User probably hit back when in mmenu
             self.exit_text_interface()
@@ -827,9 +845,13 @@ class curses_screen:
                                  border_line ,self.ncols)
 
 #-------------------------------------------------------------------------------
-    def cleanup_cnt_bg(self):
+    def cleanup_cnt_bg(self, draw_screen=True):
+        """Function will erase whole stdscr and redraw everything except of 
+           pad. setting draw_screen to false will not redraw anything."""
         self.stdscr.erase()
-        self.draw_screen()
+        
+        if draw_screen:
+            self.draw_screen()
 #-------------------------------------------------------------------------------
     def update_content(self):
         self.check_bounds()
@@ -903,10 +925,10 @@ class curses_screen:
 
 #-------------------------------------------------------------------------------
 
-    def clear_screen(self):
+    def clear_screen(self, draw_content=True):
         del(self.content_pad)
         self.content_pad = None
-        self.cleanup_cnt_bg()
+        self.cleanup_cnt_bg(draw_content)
         
 #-------------------------------------------------------------------------------
     def clear_all_screen(self):

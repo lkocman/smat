@@ -4,7 +4,7 @@
 
 
 scr_info {
-	parent = mmenu
+	parent = user
 	title = User and Password Management
 	help = Use arrows to navigate. Press enter to confirm selection.
 }
