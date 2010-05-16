@@ -678,7 +678,7 @@ class curses_screen:
         key_steps = 0
 
         key=self.stdscr.getch()
-        
+
         while True:
             if key == 27: # ESCAPE
                 if self.mode != curses_screen.m_command:
@@ -688,7 +688,7 @@ class curses_screen:
 
                 key=self.stdscr.getch()
                 continue
-
+            
             if self.mode == curses_screen.m_command:
                 if key == ord('0'):
                     self.exit_text_interface() # Esc+0
@@ -710,9 +710,7 @@ class curses_screen:
 
                 elif key == curses.KEY_ENTER or key == 10: # 343 WTF?
                     if self.scr_inf.type == screen.t_menu:
-                        
-                        self.goto(self.scr_inf.objects[\
-                            self.scr_inf.unsorted_ids[self.cline]].value)
+                        self.goto(self.get_current_object().value)
                     else: # Enter edit mode
                         self.edit_cobj_value()
                     
@@ -725,8 +723,34 @@ class curses_screen:
     def get_current_object(self):
         return self.scr_inf.objects[self.scr_inf.unsorted_ids[self.cline]]
 #-------------------------------------------------------------------------------
+    def get_previous_object(self):
+        return self.scr_inf.objects[self.scr_inf.unsorted_ids[self.pline]]
+#-------------------------------------------------------------------------------
     def edit_cobj_value(self):
-        self.scr_inf.objects[self.scr_inf[obj
+        cobj = self.get_current_object()
+        curses.cbreak()
+        if cobj.value == None:
+            cobj.value = ""
+            
+        try:
+            
+            while True:
+                key = self.stdscr.getch()
+               
+                if key == 10 or key == curses.KEY_ENTER:
+                    break
+                
+                self.draw_content()
+                cobj.value.append(key)
+                
+            if len(cobj.value.strip()) == 0:
+                cobj.value = None
+       
+            curses.nocbreak()
+            return
+        
+        except:
+            pass
 #-------------------------------------------------------------------------------
     def move_cursor(self):
         cursor_line = curses_screen.CONTENT_LINE  + self.cline - self.bounds[0]
@@ -858,9 +882,9 @@ class curses_screen:
         if self.bounds_changed:
             self.cleanup_cnt_bg()
             
-        self.add_cnt_item(self.scr_inf.objects[self.scr_inf.unsorted_ids[self.pline]], self.pline, curses.A_NORMAL)
+        self.add_cnt_item(self.get_previous_object(), self.pline, curses.A_NORMAL)
 
-        self.add_cnt_item(self.scr_inf.objects[self.scr_inf.unsorted_ids[self.cline]], self.cline, curses.A_REVERSE)
+        self.add_cnt_item(self.get_current_object(), self.cline, curses.A_REVERSE)
 
         border_line = self.avail_lines + self.CONTENT_LINE
         self.move_cursor()
@@ -940,9 +964,11 @@ class curses_screen:
         curses.echo()
         curses.endwin()
         print curses.tigetstr('sgr0')
+        
 #-------------------------------------------------------------------------------
 
     def exit_text_interface(self):
         self.clear_all_screen()
         sys.exit(0)
 
+#-------------------------------------------------------------------------------
