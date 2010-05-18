@@ -622,10 +622,13 @@ class curses_screen:
     # get the longest type_sign
     
     max_ts_len = get_longest_value_from_dict(type_sign)
+    max_value_len = 20
     
     LB = "["
     RB = "]"
 
+    LOCAL_KEY_ENTER = 10
+    LOCAL_KEY_BACKSPACE = 127
 #-------------------------------------------------------------------------------
     def __init__(self, host_info, fpath):
         """curses_screen(host_info,fpath)"""
@@ -728,29 +731,35 @@ class curses_screen:
 #-------------------------------------------------------------------------------
     def edit_cobj_value(self):
         cobj = self.get_current_object()
-        curses.cbreak()
+        
         if cobj.value == None:
             cobj.value = ""
             
-        try:
             
-            while True:
-                key = self.stdscr.getch()
-               
-                if key == 10 or key == curses.KEY_ENTER:
-                    break
+        while True:
+            key = self.stdscr.getch()
                 
-                self.draw_content()
-                cobj.value.append(key)
+            if key == curses_screen.LOCAL_KEY_ENTER or\
+               key == curses.KEY_ENTER:
+                break
+            
+            elif key == curses_screen.LOCAL_KEY_BACKSPACE\
+                 or key == curses.KEY_BACKSPACE:
+                cobj.value = cobj.value[:-1]
+            else:
+                if cobj.type == screen_obj.t_number:
+                    if not (key > 47 and key < 58):
+                        continue 
+                elif cobj.type == screen_obj.t_boolean:
+                    pass
+                 
+                cobj.value += chr(key)
                 
-            if len(cobj.value.strip()) == 0:
-                cobj.value = None
-       
-            curses.nocbreak()
-            return
-        
-        except:
-            pass
+            self.update_content()
+            
+        if len(cobj.value.strip()) == 0:
+            cobj.value = None
+            
 #-------------------------------------------------------------------------------
     def move_cursor(self):
         cursor_line = curses_screen.CONTENT_LINE  + self.cline - self.bounds[0]
@@ -835,12 +844,24 @@ class curses_screen:
         if self.scr_inf.type == screen.t_selector:
             
             col = self.__value_col
+       
+            l = len(obj.get_value())
+            
             self.content_pad.addstr(line, col, curses_screen.LB + 
-                obj.get_value() + curses_screen.RB, mode)
-            self.content_pad.addstr(line, \
-            self.ncols - len(curses_screen.type_sign[obj.type]) -1,
-                curses_screen.type_sign[obj.type],\
-            mode)
+                obj.get_value()[:curses_screen.max_value_len]\
+                + curses_screen.RB, mode) 
+        
+            # Rest of the function  is making sure that space behind RB is clean
+            
+            s_col = self.ncols - len(curses_screen.type_sign[obj.type]) -1
+            rev_col = col+l+2
+            self.content_pad.addstr(line,rev_col,(s_col - rev_col) * " ", \
+                                    curses.A_NORMAL)
+                                    
+                               
+            # Print type sign of expected user input
+            self.content_pad.addstr(line, s_col, \
+                curses_screen.type_sign[obj.type], mode)
 
 #-------------------------------------------------------------------------------
     def draw_content(self):
@@ -851,7 +872,7 @@ class curses_screen:
         i_line = 0
 
         self.check_bounds()
-
+        
         for obj_key in self.scr_inf.unsorted_ids:
             if self.scr_inf.objects[obj_key].type == screen_obj.t_ghost:
                 pass
