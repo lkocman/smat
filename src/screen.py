@@ -119,7 +119,7 @@ class screen:
                 if priorities.has_key(obj.cmd_priority):
                     if priorities[obj.cmd_priority].__contains__(obj.arg_priority):
                         raise sobj_exception(smerr.ERROR_11 % (obj.id,
-                                                               "obj.arg_priority", obj.arg_priority))
+                                                               "obj.arg_priority", `obj.arg_priority`))
 
                     priorities[obj.cmd_priority].append(obj.arg_priority)
 
@@ -157,6 +157,9 @@ screen.objects[]"""
 
         for obj_key in self.objects:
             obj = self.objects[obj_key]
+            
+            if obj.value == None:
+                continue
 
             if obj.type == screen_obj.t_boolean:
                 if obj.value == True and obj.cmd == None:
@@ -213,7 +216,8 @@ screen.objects[]"""
 
             for cmd_format in q_values:
                 cmd[cmd_priority].append(cmd_format[1]) # 0 is id
-
+            
+            return cmd
 #---------------------------------------------------------------------------
 
     def is_mandatory_by_id(self,id):
@@ -698,6 +702,9 @@ class curses_screen:
 
                 elif key == ord('3'): # Esc+3
                     self.goto(self.scr_inf.parent)
+                    
+                elif key == ord('6'): # Esc+6 -- main purpose
+                    self.scr_inf.gen_cmd()
                 # Leave command mode
                 self.mode = curses_screen.m_default
             else:
