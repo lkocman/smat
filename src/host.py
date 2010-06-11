@@ -32,7 +32,6 @@ import os, sys
 import smerr
 
 class host:
-    SUPPORTED_OS = [ "Linux", "SunOS" ] # Maybe OracleOS in future ;-)
     smat_home_var = "SMAT_HOME"
     smat_def_path = "/usr/share/smat/fpaths"
     comment_char = "#"
