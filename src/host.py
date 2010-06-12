@@ -34,6 +34,7 @@ import smerr
 class host:
     smat_home_var = "SMAT_HOME"
     smat_def_path = "/usr/share/smat/fpaths"
+    smat_dev_path = "fpaths"
     comment_char = "#"
 #---------------------------------------------------------------------------
 
@@ -62,11 +63,17 @@ class host:
 #---------------------------------------------------------------------------
 
     def get_smat_home(self):
+        """get_smat_home() - Function search for location of screen files.
+        Highest priority has path stored in $SMAT_HOME, then the default path
+        /usr/share/smat/fpaths and then because of dev. reasons `pwd`/fpaths"""
         self.smat_home = os.getenv(host.smat_home_var, default = None)
 
         if self.smat_home == None:
             if os.path.exists(host.smat_def_path):
                 self.smat_home = host.__smat_def_path
+            elif os.path.exists(host.smat_dev_path):
+                self.smat_home = os.path.abspath(os.path.join(os.path.curdir, \
+                                  host.smat_dev_path))
             else:
                 raise sm_host_exception(smerr.ERROR_1 %(host.smat_def_path))
 
