@@ -63,7 +63,7 @@ class host:
 #---------------------------------------------------------------------------
 
     def get_smat_home(self):
-        """get_smat_home() - Function search for location of screen files.
+        """get_smat_home() - Function search for location of screen files.\n
         Highest priority has path stored in $SMAT_HOME, then the default path
         /usr/share/smat/fpaths and then because of dev. reasons `pwd`/fpaths"""
         self.smat_home = os.getenv(host.smat_home_var, default = None)

@@ -28,12 +28,8 @@ along with Smat.  If not, see <http://www.gnu.org/licenses/>.
 
 """
 
-import os, sys
-import smerr
-import obj_loader
-import traceback
-import math
-import curses
+import os, sys, re, traceback, curses, math
+import smerr,  obj_loader
 
 #-------------------------------------------------------------------------------
 
@@ -130,6 +126,42 @@ class screen:
 
         return priorities
 #---------------------------------------------------------------------------
+    def substitute(self, arg_format):
+        """subtitute(arg_format) - Function replaces all occurance of $[var_id]
+        by self.objects[var_id].value"""
+
+        VAR_START="$["; VAR_END="]"
+
+        strt_pos = arg_format.find(VAR_START)
+
+        if strt_pos <0:
+            return arg_format
+
+        static_prts = re.split("\$\[.*?\]", arg_format) # $[*] is cutted
+        dynamic_ptrs = re.findall("\$\[.*?\]", arg_format) # $[*] is returned
+
+        if not dynamic_ptrs:
+            raise Exception(smerr.ERROR_18 %(self.fpath, VAR_START+VAR_END))
+
+        index = 0
+
+        for var_id in dynamic_ptrs:
+            dynamic_ptrs[index]=self.objects[var_id[2:-1].strip()].value
+            index+=1
+
+        if strt_pos > 0: # It may happen that we'll have to add dyn. before static
+            zipped=zip(static_prts, dynamic_ptrs)
+        else:
+            zipped=zip(dynamic_ptrs, static_prts)
+
+        result = ""
+
+        for tpl in zipped:
+            result += "".join(tpl)
+
+        return result
+
+#---------------------------------------------------------------------------
 
     def gen_cmd(self):
         """gen_cmd() -- This function generates set of command based on
@@ -178,20 +210,25 @@ screen.objects[]"""
 
                 if obj.get_arg_priority() < 0: # -1 -2 ...
                     if not cmd_queue.has_key(obj.get_cmd_priority()):
-                        cmd_queue[obj.get_cmd_priority()] = [[abs(obj.get_arg_priority()),
-                                                              obj.get_arg_format()]]
+                        cmd_queue[obj.get_cmd_priority()] = \
+                                 [[abs(obj.get_arg_priority()),\
+                                   self.substitute(obj.get_arg_format())]]
                         continue
                     else:
-                        cmd_queue[obj.get_cmd_priority()].append([abs(obj.get_arg_priority()),obj.get_arg_format()])
+                        cmd_queue[obj.get_cmd_priority()].append([abs(\
+                            obj.get_arg_priority(),\
+                            self.substitute(obj.get_arg_format()))])
                         continue
 
                 if len(cmd[obj.get_cmd_priority()]) - 1 < obj.get_arg_priority(): # cmd[x][0]=cmd_string
                     cmd[obj.get_cmd_priority()].extend(
                         (obj.get_arg_priority() - (len(cmd[obj.get_cmd_priorty()]) -1)) * [ None ])
-                    cmd[obj.get_cmd_priority()][obj.get_arg_priority() + 1] = obj.get_arg_format()
+                    cmd[obj.get_cmd_priority()][obj.get_arg_priority() + 1] =\
+                       self.substitute(obj.get_arg_format())
                     continue
                 else:
-                    cmd[obj.get_cmd_priority()].append(obj.get_arg_format())
+                    cmd[obj.get_cmd_priority()].append(self.substitute(\
+                        obj.get_arg_format()))
                     continue
             else:
                 try:
@@ -200,7 +237,8 @@ screen.objects[]"""
                         i = cmd[obj.get_cmd_priority()].index(None, i)
 
                         if not res_priority[obj.get_cmd_priority()].__contains__(i):
-                            cmd[obj.get_cmd_priority()][i+1] = obj.get_arg_format()
+                            cmd[obj.get_cmd_priority()][i+1] = self.substitute(\
+                                obj.get_arg_format())
                             res_priority[obj.get_cmd_priority()].append(i)
                             break
                         i=i+1
@@ -208,7 +246,8 @@ screen.objects[]"""
                 except ValueError:
                     i = len(cmd[obj.get_cmd_priority()])
                     if not res_priority[obj.get_cmd_priority()].__contains__(i):
-                        cmd[obj.get_cmd_priority()].append(obj.get_arg_format())
+                        cmd[obj.get_cmd_priority()].append(self.substitute(\
+                            obj.get_arg_format()))
                         res_priority[obj.get_cmd_priority()].append(i)
 
 
@@ -764,7 +803,10 @@ class curses_screen:
                 elif cobj.type == screen_obj.t_boolean:
                     pass
 
-                cobj.value += chr(key)
+                try:
+                    cobj.value += chr(key)
+                except ValueError:
+                    pass
 
             self.update_content(split_list=False)
 

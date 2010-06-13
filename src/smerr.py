@@ -46,3 +46,4 @@ ERROR_14='SyntaxError 14: Fpath %s line %d:\n Expected format is "(%s | %s) {".\
 ERROR_15='SyntaxError 15: Fpath %s line %d:\n Expected format is "<value> = <attribute>".\n'
 ERROR_16='SyntaxError 16: Fpath %s line %d:\n Unsupported attribute "%s".\n'
 ERROR_17='Error 17: Objects of type link can\'t be mixed with other types.\n'
+ERROR_18='Error 18: Fpath %s: couldn\'t match pattern %s. Probably a syntax error.\nProblematic line:\n%s\n'

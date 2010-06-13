@@ -36,7 +36,7 @@ scr_obj {
 	label = User name
 	cmd = /usr/sbin/useradd
 	cmd_priority = 0
-	arg_format = $user_name
+	arg_format = $[user_name]
 	arg_priority = -1
 }
 
@@ -45,7 +45,7 @@ scr_obj {
 	type = text
 	label = Primary Group
 	cmd = /usr/sbin/useradd
-	arg_format = -g $primary_group
+	arg_format = -g $[primary_group]
 }
 
 
@@ -55,7 +55,7 @@ scr_obj {
 	list_separator = ,
 	label = Groups
 	cmd = /usr/sbin/useradd
-	arg_format = -G $groups
+	arg_format = -G $[groups]
 }
 
 scr_obj {
@@ -63,7 +63,7 @@ scr_obj {
 	type = number
 	label = User ID
 	cmd = /usr/sbin/useradd
-	arg_format = -n $uid
+	arg_format = -n $[uid]
 }
 
 scr_obj {
@@ -71,7 +71,7 @@ scr_obj {
 	type = text
 	label = Shell
 	cmd =  /usr/sbin/useradd
-	arg_format = -s $shell
+	arg_format = -s $[shell]
 }
 
 scr_obj {
@@ -79,7 +79,7 @@ scr_obj {
 	type = text
 	label = Home directory
 	cmd = /usr/sbin/useradd
-	arg_format = -d $home_dir
+	arg_format = -d $[home_dir]
 }
 
 scr_obj {
@@ -95,7 +95,7 @@ scr_obj {
 	type = text
 	label = Comment
 	cmd = /usr/sbin/useradd
-	arg_format = -c $comment
+	arg_format = -c $[comment]
 }
 
 scr_obj {
@@ -103,14 +103,14 @@ scr_obj {
 	type = text
 	label = User expiration (YYYY-MM-DD)
 	cmd = /usr/sbin/useradd
-	arg_format = -e $usr_expire
+	arg_format = -e $[usr_expire]
 }
 
 scr_obj { # object for test purpose only
 	id = ghost_test
 	type = ghost
 	cmd = /usr/sbin/usermod
-	arg_format = $user_name
+	arg_format = $[user_name]
 	arg_priority = -1
 }
 
@@ -119,6 +119,6 @@ scr_obj {
 	type = text
 	label = Inactive after expiration (days)
 	cmd = /usr/sbin/useradd
-	arg_format = -f $usr_inactive
+	arg_format = -f $[usr_inactive]
 }
 
