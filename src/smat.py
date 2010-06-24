@@ -86,7 +86,8 @@ class smat:
 #-------------------------------------------------------------------------------
 
     def print_usage(self):
-        print """Usage:
+        print """This is program is a Free Software.
+Author does not take any responsibility for it.\n\nUsage:
 	%s [ subcommand ] [fpath]
 
 	Subcommands:

@@ -2,19 +2,6 @@
 # README.FIRST
 ################################################################################
 
-How to set up environment for smat.
-
-One of the conditions before execution is to have storage of screen files for
-smat. The default one is /usr/share/smat/fpaths. This will be used in official
-releases.
-
-You can set up $SMAT_HOME to override default path for smat screen files.
-All available files are stored in smat/src/fpaths. So following command should
-set up enviroment for you:
-
-export SMAT_HOME=/path_to_smat/src/fpaths
-
-
 To execute smat type ./smat or ./smatty
 
 More info will be added later
