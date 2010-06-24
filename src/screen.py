@@ -2,37 +2,34 @@
 # -*- coding: utf-8 -*-
 
 """
-CDDL HEADER START
+Project Smat: System Modular Administration Tool
+File name:    screen.py
+Description:  This file contains curses frontend and the main smat class.
 
-The contents of this file are subject to the terms of the
-Common Development and Distribution License (the "License").
-You may not use this file except in compliance with the License.
+Copyright (c) since 2009 Lubos Kocman <lkocman@redhat.com>. All rights reserved.
 
-You can obtain a copy of the license at src/SMAT.LICENSE
-or http://www.opensolaris.org/os/licensing.
-See the License for the specific language governing permissions
-and limitations under the License.
-
-When distributing Covered Code, include this CDDL HEADER in each
-file and include the License file at src/SMAT.LICENSE.
-If applicable, add the following below this CDDL HEADER, with the
-fields enclosed by brackets "[]" replaced with your own identifying
-information: Portions Copyright [yyyy] [name of copyright owner]
-
-CDDL HEADER END
-
-Copyright 2010 Lubos Kocman.  All rights reserved.
-Use is subject to license terms.
 """
 
-# screen.py - contains screen class
+"""
+This file is part of Smat.
 
-import os, sys
-import smerr
-import obj_loader
-import traceback
-import math
-import curses
+Smat is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Smat is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Smat.  If not, see <http://www.gnu.org/licenses/>.
+
+"""
+
+import os, sys, re, traceback, curses, math
+import smerr,  obj_loader
 
 #-------------------------------------------------------------------------------
 
@@ -59,6 +56,17 @@ class screen:
 
     def __init__(self, host_info, fpath):
         """screen(fpath)"""
+        self.set_default_values(host_info, fpath)
+        self.read_objects()
+
+#---------------------------------------------------------------------------
+    def get_obj_count(self):
+        """get_obj_count() -- should be called after each read_objects()"""
+        self.obj_count = len(self.objects) # curses purpose
+
+#---------------------------------------------------------------------------
+    def set_default_values(self,host_info,fpath):
+        self.title = None
         self.title = None
         self.help = None
         self.parent = None
@@ -70,9 +78,6 @@ class screen:
         self.ghosts = {}
         self.unsorted_ids = []
         self.longest_label = 0 # experimental use
-
-        self.read_objects()
-        self.obj_count = len(self.objects) # curses purpose
 
 #---------------------------------------------------------------------------
 
@@ -109,9 +114,10 @@ class screen:
 
             if obj.cmd_priority != None:
                 if priorities.has_key(obj.cmd_priority):
-                    if priorities[obj.cmd_priority].__contains__(obj.arg_priority):
+                    # WTH is going on here?
+                    if obj.arg_priority != None and priorities[obj.cmd_priority].__contains__(obj.arg_priority):
                         raise sobj_exception(smerr.ERROR_11 % (obj.id,
-                                                               "obj.arg_priority", obj.arg_priority))
+                                                               "obj.arg_priority", `obj.arg_priority`))
 
                     priorities[obj.cmd_priority].append(obj.arg_priority)
 
@@ -119,6 +125,42 @@ class screen:
                     priorities[obj.cmd_priority] = []
 
         return priorities
+#---------------------------------------------------------------------------
+    def substitute(self, arg_format):
+        """subtitute(arg_format) - Function replaces all occurance of $[var_id]
+        by self.objects[var_id].value"""
+
+        VAR_START="$["; VAR_END="]"
+
+        strt_pos = arg_format.find(VAR_START)
+
+        if strt_pos <0:
+            return arg_format
+
+        static_prts = re.split("\$\[.*?\]", arg_format) # $[*] is cutted
+        dynamic_ptrs = re.findall("\$\[.*?\]", arg_format) # $[*] is returned
+
+        if not dynamic_ptrs:
+            raise Exception(smerr.ERROR_18 %(self.fpath, VAR_START+VAR_END))
+
+        index = 0
+
+        for var_id in dynamic_ptrs:
+            dynamic_ptrs[index]=self.objects[var_id[2:-1].strip()].value
+            index+=1
+
+        if strt_pos > 0: # It may happen that we'll have to add dyn. before static
+            zipped=zip(static_prts, dynamic_ptrs)
+        else:
+            zipped=zip(dynamic_ptrs, static_prts)
+
+        result = ""
+
+        for tpl in zipped:
+            result += "".join(tpl)
+
+        return result
+
 #---------------------------------------------------------------------------
 
     def gen_cmd(self):
@@ -150,6 +192,9 @@ screen.objects[]"""
         for obj_key in self.objects:
             obj = self.objects[obj_key]
 
+            if obj.value == None:
+                continue
+
             if obj.type == screen_obj.t_boolean:
                 if obj.value == True and obj.cmd == None:
                     continue
@@ -165,20 +210,25 @@ screen.objects[]"""
 
                 if obj.get_arg_priority() < 0: # -1 -2 ...
                     if not cmd_queue.has_key(obj.get_cmd_priority()):
-                        cmd_queue[obj.get_cmd_priority()] = [[abs(obj.get_arg_priority()),
-                                                              obj.get_arg_format()]]
+                        cmd_queue[obj.get_cmd_priority()] = \
+                                 [[abs(obj.get_arg_priority()),\
+                                   self.substitute(obj.get_arg_format())]]
                         continue
                     else:
-                        cmd_queue[obj.get_cmd_priority()].append([abs(obj.get_arg_priority()),obj.get_arg_format()])
+                        cmd_queue[obj.get_cmd_priority()].append([abs(\
+                            obj.get_arg_priority(),\
+                            self.substitute(obj.get_arg_format()))])
                         continue
 
                 if len(cmd[obj.get_cmd_priority()]) - 1 < obj.get_arg_priority(): # cmd[x][0]=cmd_string
                     cmd[obj.get_cmd_priority()].extend(
                         (obj.get_arg_priority() - (len(cmd[obj.get_cmd_priorty()]) -1)) * [ None ])
-                    cmd[obj.get_cmd_priority()][obj.get_arg_priority() + 1] = obj.get_arg_format()
+                    cmd[obj.get_cmd_priority()][obj.get_arg_priority() + 1] =\
+                       self.substitute(obj.get_arg_format())
                     continue
                 else:
-                    cmd[obj.get_cmd_priority()].append(obj.get_arg_format())
+                    cmd[obj.get_cmd_priority()].append(self.substitute(\
+                        obj.get_arg_format()))
                     continue
             else:
                 try:
@@ -187,7 +237,8 @@ screen.objects[]"""
                         i = cmd[obj.get_cmd_priority()].index(None, i)
 
                         if not res_priority[obj.get_cmd_priority()].__contains__(i):
-                            cmd[obj.get_cmd_priority()][i+1] = obj.get_arg_format()
+                            cmd[obj.get_cmd_priority()][i+1] = self.substitute(\
+                                obj.get_arg_format())
                             res_priority[obj.get_cmd_priority()].append(i)
                             break
                         i=i+1
@@ -195,7 +246,8 @@ screen.objects[]"""
                 except ValueError:
                     i = len(cmd[obj.get_cmd_priority()])
                     if not res_priority[obj.get_cmd_priority()].__contains__(i):
-                        cmd[obj.get_cmd_priority()].append(obj.get_arg_format())
+                        cmd[obj.get_cmd_priority()].append(self.substitute(\
+                            obj.get_arg_format()))
                         res_priority[obj.get_cmd_priority()].append(i)
 
 
@@ -206,6 +258,7 @@ screen.objects[]"""
             for cmd_format in q_values:
                 cmd[cmd_priority].append(cmd_format[1]) # 0 is id
 
+            return cmd
 #---------------------------------------------------------------------------
 
     def is_mandatory_by_id(self,id):
@@ -242,7 +295,7 @@ screen.objects[]"""
             obj = self.objects[o]
             # Only if user specified value, or ghost objects
             if obj.value != None or obj.type == screen_obj.t_ghost:
-                ids.append(obj.id)
+                ids.append(o)
 
                 # Blockers are indexed by what object is blocked "obj.blocking"
                 if len(obj.blocking) > 0 :
@@ -342,7 +395,7 @@ screen.objects[]"""
         for obj in objr.get_objects():
             self.add_object(obj)
 
-
+        self.get_obj_count()
 
 #-------------------------------------------------------------------------------
 
@@ -424,7 +477,7 @@ class screen_obj:
 
 #-------------------------------------------------------------------------------
 
-    def get_value(self):
+    def get_value(self,split_list=True):
         """get_value()
         function will return non-none value of the given object. In case
         of boolean objects, value will be taken based on current obj.value.
@@ -439,7 +492,10 @@ class screen_obj:
                 if self.value == None:
                     return empty_string
 
-                return self.list_separator.join(self.value)
+                if split_list:
+                    return self.list_separator.join(self.value)
+                else:
+                    return self.value
 
             elif self.type == screen_obj.t_boolean: # Boolean type
 
@@ -582,9 +638,9 @@ class curses_screen:
     TITLE_LINE = 1
     HELP_LINE =  3
     CONTENT_LINE = 5
-    
+
     VALUE_RES_COLS = 15
-    
+
     # Keep in mind that no string L_* shouldn't exceed len of 20 chars
     # Recommended size is 16 chars to have some space arround
     L_GOTO   ="Esc+2=Goto"
@@ -610,14 +666,17 @@ class curses_screen:
         screen_obj.t_list : " (,)",
         screen_obj.t_number: " #"
     }
-   
+
     # get the longest type_sign
-    
+
     max_ts_len = get_longest_value_from_dict(type_sign)
-    
+    max_value_len = 20
+
     LB = "["
     RB = "]"
 
+    LOCAL_KEY_ENTER = 10
+    LOCAL_KEY_BACKSPACE = 127
 #-------------------------------------------------------------------------------
     def __init__(self, host_info, fpath):
         """curses_screen(host_info,fpath)"""
@@ -662,14 +721,15 @@ class curses_screen:
         function should be called before usage of goto() or reset() """
         self.cline = self.pline = 0
         self.bounds = (0,0)
-        self.clear_screen()
-        
+        self.clear_screen(False) # By setting up False, nothing will be redrawed
+
 #-------------------------------------------------------------------------------
     def process_user_input(self):
         key = None
         key_steps = 0
 
         key=self.stdscr.getch()
+
         while True:
             if key == 27: # ESCAPE
                 if self.mode != curses_screen.m_command:
@@ -686,6 +746,9 @@ class curses_screen:
 
                 elif key == ord('3'): # Esc+3
                     self.goto(self.scr_inf.parent)
+
+                elif key == ord('6'): # Esc+6 -- main purpose
+                    self.scr_inf.gen_cmd()
                 # Leave command mode
                 self.mode = curses_screen.m_default
             else:
@@ -699,10 +762,56 @@ class curses_screen:
                         self.pline = self.cline
                         self.cline = self.cline - 1
 
+                elif key == curses.KEY_ENTER or key == 10: # 343 WTF?
+                    if self.scr_inf.type == screen.t_menu:
+                        self.goto(self.get_current_object().value)
+                    else: # Enter edit mode
+                        self.edit_cobj_value()
+
             self.update_content()
             key=self.stdscr.getch()
 
 
+
+#-------------------------------------------------------------------------------
+    def get_current_object(self):
+        return self.scr_inf.objects[self.scr_inf.unsorted_ids[self.cline]]
+#-------------------------------------------------------------------------------
+    def get_previous_object(self):
+        return self.scr_inf.objects[self.scr_inf.unsorted_ids[self.pline]]
+#-------------------------------------------------------------------------------
+    def edit_cobj_value(self):
+        cobj = self.get_current_object()
+
+        if cobj.value == None:
+            cobj.value = ""
+
+        while True:
+            key = self.stdscr.getch()
+
+            if key == curses_screen.LOCAL_KEY_ENTER or\
+               key == curses.KEY_ENTER:
+                break
+
+            elif key == curses_screen.LOCAL_KEY_BACKSPACE\
+                 or key == curses.KEY_BACKSPACE:
+                cobj.value = cobj.value[:-1]
+            else:
+                if cobj.type == screen_obj.t_number:
+                    if not (key > 47 and key < 58):
+                        continue
+                elif cobj.type == screen_obj.t_boolean:
+                    pass
+
+                try:
+                    cobj.value += chr(key)
+                except ValueError:
+                    pass
+
+            self.update_content(split_list=False)
+
+        if len(cobj.value.strip()) == 0:
+            cobj.value = None
 
 #-------------------------------------------------------------------------------
     def move_cursor(self):
@@ -712,7 +821,7 @@ class curses_screen:
     def goto(self, fpath="mmenu"):
         if fpath != None:
             self.dismiss_user_action()
-            self.scr_inf = screen(self.host_info, self.scr_inf.parent)
+            self.scr_inf = screen(self.host_info, fpath)
             self.draw_all_screen()
         else: # User probably hit back when in mmenu
             self.exit_text_interface()
@@ -767,33 +876,45 @@ class curses_screen:
                 self.bounds_changed = True
                 return
         self.bounds_changed = False
-        
+
 #-------------------------------------------------------------------------------
 
     def get_yx(self):
         self.nlines, self.ncols = self.stdscr.getmaxyx()
-        
+
         if self.ncols < 80:
             self.__value_col = 50
         else:
             self.__value_col = self.ncols - 20
-        
+
 #-------------------------------------------------------------------------------
 
-    def add_cnt_item(self, obj, line, mode, col=0):
+    def add_cnt_item(self, obj, line, mode, split_list=True, col=0):
         """add_cnt_item(text, line, mode, col=0)"""
         self.content_pad.addstr(line, col, " " + obj.label, mode)
 
 
         if self.scr_inf.type == screen.t_selector:
-            
+
             col = self.__value_col
-            self.content_pad.addstr(line, col, curses_screen.LB + 
-                obj.get_value() + curses_screen.RB, mode)
-            self.content_pad.addstr(line, \
-            self.ncols - len(curses_screen.type_sign[obj.type]) -1,
-                curses_screen.type_sign[obj.type],\
-            mode)
+
+            l = len(obj.get_value())
+
+            self.content_pad.addstr(line, col, curses_screen.LB +
+                obj.get_value(split_list)[:curses_screen.max_value_len]\
+                + curses_screen.RB, mode)
+
+            # Rest of the function  is making sure that space behind RB is clean
+
+            s_col = self.ncols - len(curses_screen.type_sign[obj.type]) -1
+            rev_col = col+l+2
+            self.content_pad.addstr(line,rev_col,(s_col - rev_col) * " ", \
+                                    curses.A_NORMAL)
+
+
+            # Print type sign of expected user input
+            self.content_pad.addstr(line, s_col, \
+                curses_screen.type_sign[obj.type], mode)
 
 #-------------------------------------------------------------------------------
     def draw_content(self):
@@ -822,18 +943,22 @@ class curses_screen:
                                  border_line ,self.ncols)
 
 #-------------------------------------------------------------------------------
-    def cleanup_cnt_bg(self):
+    def cleanup_cnt_bg(self, draw_screen=True):
+        """Function will erase whole stdscr and redraw everything except of
+           pad. setting draw_screen to false will not redraw anything."""
         self.stdscr.erase()
-        self.draw_screen()
+
+        if draw_screen:
+            self.draw_screen()
 #-------------------------------------------------------------------------------
-    def update_content(self):
+    def update_content(self, split_list=True):
         self.check_bounds()
         if self.bounds_changed:
             self.cleanup_cnt_bg()
-            
-        self.add_cnt_item(self.scr_inf.objects[self.scr_inf.unsorted_ids[self.pline]], self.pline, curses.A_NORMAL)
 
-        self.add_cnt_item(self.scr_inf.objects[self.scr_inf.unsorted_ids[self.cline]], self.cline, curses.A_REVERSE)
+        self.add_cnt_item(self.get_previous_object(), self.pline, curses.A_NORMAL)
+
+        self.add_cnt_item(self.get_current_object(), self.cline, curses.A_REVERSE, split_list)
 
         border_line = self.avail_lines + self.CONTENT_LINE
         self.move_cursor()
@@ -845,12 +970,12 @@ class curses_screen:
         start_col = (self.ncols - len(self.scr_inf.title)) // 2
         self.stdscr.addstr(curses_screen.TITLE_LINE, start_col, \
                            self.scr_inf.title)
-        
+
 #-------------------------------------------------------------------------------
 
     def draw_help(self):
         self.stdscr.addstr(curses_screen.HELP_LINE, 0, self.scr_inf.help)
-        
+
 #-------------------------------------------------------------------------------
 
     def draw_menu(self, force=False):
@@ -898,11 +1023,11 @@ class curses_screen:
 
 #-------------------------------------------------------------------------------
 
-    def clear_screen(self):
+    def clear_screen(self, draw_content=True):
         del(self.content_pad)
         self.content_pad = None
-        self.cleanup_cnt_bg()
-        
+        self.cleanup_cnt_bg(draw_content)
+
 #-------------------------------------------------------------------------------
     def clear_all_screen(self):
         """clear_all_screen()"""
@@ -913,9 +1038,11 @@ class curses_screen:
         curses.echo()
         curses.endwin()
         print curses.tigetstr('sgr0')
+
 #-------------------------------------------------------------------------------
 
     def exit_text_interface(self):
         self.clear_all_screen()
         sys.exit(0)
 
+#-------------------------------------------------------------------------------

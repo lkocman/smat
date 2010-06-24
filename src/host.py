@@ -2,38 +2,39 @@
 # -*- coding: utf-8 -*-
 
 """
-CDDL HEADER START
+Project Smat: System Modular Administration Tool
+File name:    host.py
+Description:  This class contain general information about hosted environment.
 
-The contents of this file are subject to the terms of the
-Common Development and Distribution License (the "License").
-You may not use this file except in compliance with the License.
+Copyright (c) since 2009 Lubos Kocman <lkocman@redhat.com>. All rights reserved.
 
-You can obtain a copy of the license at src/SMAT.LICENSE
-or http://www.opensolaris.org/os/licensing.
-See the License for the specific language governing permissions
-and limitations under the License.
-
-When distributing Covered Code, include this CDDL HEADER in each
-file and include the License file at src/SMAT.LICENSE.
-If applicable, add the following below this CDDL HEADER, with the
-fields enclosed by brackets "[]" replaced with your own identifying
-information: Portions Copyright [yyyy] [name of copyright owner]
-
-CDDL HEADER END
-
-Copyright 2010 Lubos Kocman.  All rights reserved.
-Use is subject to license terms.
 """
 
-# host.py - Contains
+"""
+This file is part of Smat.
+
+Smat is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Smat is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Smat.  If not, see <http://www.gnu.org/licenses/>.
+
+"""
 
 import os, sys
 import smerr
 
 class host:
-    SUPPORTED_OS = [ "SunOS" ] # Maybe OracleOS in future ;-)
     smat_home_var = "SMAT_HOME"
     smat_def_path = "/usr/share/smat/fpaths"
+    smat_dev_path = "fpaths"
     comment_char = "#"
 #---------------------------------------------------------------------------
 
@@ -62,11 +63,17 @@ class host:
 #---------------------------------------------------------------------------
 
     def get_smat_home(self):
+        """get_smat_home() - Function search for location of screen files.\n
+        Highest priority has path stored in $SMAT_HOME, then the default path
+        /usr/share/smat/fpaths and then because of dev. reasons `pwd`/fpaths"""
         self.smat_home = os.getenv(host.smat_home_var, default = None)
 
         if self.smat_home == None:
             if os.path.exists(host.smat_def_path):
                 self.smat_home = host.__smat_def_path
+            elif os.path.exists(host.smat_dev_path):
+                self.smat_home = os.path.abspath(os.path.join(os.path.curdir, \
+                                  host.smat_dev_path))
             else:
                 raise sm_host_exception(smerr.ERROR_1 %(host.smat_def_path))
 

@@ -12,7 +12,7 @@ You can set up $SMAT_HOME to override default path for smat screen files.
 All available files are stored in smat/src/fpaths. So following command should
 set up enviroment for you:
 
-export SMAT_HOME=/home/my_username/path_to_smat/smat/src/fpaths
+export SMAT_HOME=/path_to_smat/src/fpaths
 
 
 To execute smat type ./smat or ./smatty

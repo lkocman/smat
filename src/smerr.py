@@ -2,30 +2,31 @@
 # -*- coding: utf-8 -*-
 
 """
-CDDL HEADER START
+Project Smat: System Modular Administration Tool
+File name:    smerr.py
+Description:  This file contains misc. error messages.
 
-The contents of this file are subject to the terms of the
-Common Development and Distribution License (the "License").
-You may not use this file except in compliance with the License.
+Copyright (c) since 2009 Lubos Kocman <lkocman@redhat.com>. All rights reserved.
 
-You can obtain a copy of the license at src/SMAT.LICENSE
-or http://www.opensolaris.org/os/licensing.
-See the License for the specific language governing permissions
-and limitations under the License.
-
-When distributing Covered Code, include this CDDL HEADER in each
-file and include the License file at src/SMAT.LICENSE.
-If applicable, add the following below this CDDL HEADER, with the
-fields enclosed by brackets "[]" replaced with your own identifying
-information: Portions Copyright [yyyy] [name of copyright owner]
-
-CDDL HEADER END
-
-Copyright 2010 Lubos Kocman.  All rights reserved.
-Use is subject to license terms.
 """
 
-# smerr.py - Contains error messages from smat
+"""
+This file is part of Smat.
+
+Smat is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Smat is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Smat.  If not, see <http://www.gnu.org/licenses/>.
+
+"""
 
 ERROR_1='Error 1: Unable to get valid smat home. Neither $SMAT_HOME or %s exists. Exiting.\n'
 ERROR_2='Error 2: Object auto id <%d>: value for attribute <%s> is not set. Exiting.\n'
@@ -45,3 +46,4 @@ ERROR_14='SyntaxError 14: Fpath %s line %d:\n Expected format is "(%s | %s) {".\
 ERROR_15='SyntaxError 15: Fpath %s line %d:\n Expected format is "<value> = <attribute>".\n'
 ERROR_16='SyntaxError 16: Fpath %s line %d:\n Unsupported attribute "%s".\n'
 ERROR_17='Error 17: Objects of type link can\'t be mixed with other types.\n'
+ERROR_18='Error 18: Fpath %s: couldn\'t match pattern %s. Probably a syntax error.\nProblematic line:\n%s\n'
