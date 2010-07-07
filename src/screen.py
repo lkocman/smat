@@ -670,7 +670,7 @@ class curses_screen:
     # get the longest type_sign
 
     max_ts_len = get_longest_value_from_dict(type_sign)
-    max_value_len = 20
+    max_value_len = 20 -  max_ts_len - 1
 
     LB = "["
     RB = "]"
@@ -898,10 +898,10 @@ class curses_screen:
 
             col = self.__value_col
 
-            l = len(obj.get_value())
+            l = len(obj.get_value()[-self.max_value_len:])
 
             self.content_pad.addstr(line, col, curses_screen.LB +
-                obj.get_value(split_list)[:curses_screen.max_value_len]\
+                obj.get_value(split_list)[-curses_screen.max_value_len:]\
                 + curses_screen.RB, mode)
 
             # Rest of the function  is making sure that space behind RB is clean
