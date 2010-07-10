@@ -168,7 +168,7 @@ class screen:
 screen.objects[]"""
         self.check_dependencies()
 
-        cmd = {}
+        cmd = command()
         cmd_queue = {}
         """
         Structure of cmd {}
@@ -301,10 +301,12 @@ screen.objects[]"""
                 if len(obj.blocking) > 0 :
                     for bl in obj.blocking:
                         if bl == obj.id:
-                            raise dependency_exception(smerr.ERROR_6 + smerr.ERROR_6_1 % (obj.id))
+                            raise dependency_exception(smerr.ERROR_6 +
+                                                       smerr.ERROR_6_1 % (obj.id))
 
                         if self.is_mandatory_by_id(bl):
-                            raise dependency_exception(smerr.ERROR_6 + smerr.ERROR_6_2 % (bl))
+                            raise dependency_exception(smerr.ERROR_6 +
+                                                       smerr.ERROR_6_2 % (bl))
 
                         if not blocking.has_key(bl):
                             blocking[bl] = [obj.id]
@@ -515,7 +517,8 @@ class screen_obj:
         except (TypeError, AttributeError):
             print smerr.ERROR_9
             print "Current setup is:\n"
-            print self.value, "With real type:", type(self.value).__name__, "and defined type id:", self.type
+            print self.value, "With real type:", type(self.value).__name__,
+            "and defined type id:", self.type
             sys.exit(9)
 
 #-------------------------------------------------------------------------------
@@ -572,15 +575,18 @@ necessary data."""
         try:
             if self.type == screen_obj.t_link:
                 if self.value == None:
-                    raise sobj_exception(smerr.ERROR_2 % (self.auto_id,screen_obj.s_value))
+                    raise sobj_exception(smerr.ERROR_2 %
+                                         (self.auto_id,screen_obj.s_value))
                 else:
                     self.id = self.value
 
             if self.id == None:
-                raise sobj_exception(smerr.ERROR_2 % (self.auto_id,screen_obj.s_id))
+                raise sobj_exception(smerr.ERROR_2 %
+                                     (self.auto_id,screen_obj.s_id))
 
             elif self.type == None:
-                raise sobj_exception(smerr.ERROR_2 % (self.auto_id,screen_obj.s_type))
+                raise sobj_exception(smerr.ERROR_2 %
+                                     (self.auto_id,screen_obj.s_type))
 
             if self.type != screen_obj.t_ghost:
                 if self.label == None:
@@ -729,6 +735,8 @@ class curses_screen:
             self.cmd_window = curses.newwin(self.nlines - 2*mrg, self.ncols -
                                             2*mrg, mrg, mrg)
             self.cmd_window.box()
+            
+            self.cmd_window.addstr(str(cmd))
             self.cmd_window.refresh()
             """
             self.cmd_pad = curses.newpad(self.nlines - \
@@ -1079,3 +1087,14 @@ class curses_screen:
         sys.exit(0)
 
 #-------------------------------------------------------------------------------
+
+class command(dict):
+#-------------------------------------------------------------------------------
+    def __str__(self):
+        s_cmd = ""
+        
+        for cmd_key in self.keys():
+            s_cmd += " ".join(self.get(cmd_key)) + "\n"
+            
+        return s_cmd[:-1] # get rid of last newline
+        
