@@ -684,7 +684,7 @@ class curses_screen:
     LOCAL_KEY_ENTER = 10
     LOCAL_KEY_BACKSPACE = 127
 
-    CMD_PAD_MARGIN = 2
+    CMDW_MARGIN = 2
 #-------------------------------------------------------------------------------
     def __init__(self, host_info, fpath):
         """curses_screen(host_info,fpath)"""
@@ -725,29 +725,35 @@ class curses_screen:
 
 #-------------------------------------------------------------------------------
     def draw_cmd_pad(self, cmd):
-        "draw_cmd_pad(cmd) -- Creates a pad with generated command"
-        line = 0
+        "draw_cmd_pad(cmd) -- Creates a pad that contains passed string."
+        
+        x_margin = 1
+        y_margin = 1
+        
+        head_line = 0
 
-        mrg = curses_screen.CMD_PAD_MARGIN
-        # I had to use windows.subpad in order to display border correctly
+        mrg = curses_screen.CMDW_MARGIN
+        # I have to use windows.subpad in order to display border correctly
         if self.cmd_window == None:
 
             self.cmd_window = curses.newwin(self.nlines - 2*mrg, self.ncols -
                                             2*mrg, mrg, mrg)
             self.cmd_window.box()
             
-            self.cmd_window.addstr(str(cmd))
             self.cmd_window.refresh()
-            """
-            self.cmd_pad = curses.newpad(self.nlines - \
-                           curses_screen.CMD_PAD_MARGIN, self.ncols -
-                           curses_screen.CMD_PAD_MARGIN)
-            self.cmd_pad.box()
-            self.cmd_pad.refresh(line, 0, curses_screen.CMD_PAD_MARGIN,
-                                 curses_screen.CMD_PAD_MARGIN,
-                                 self.nlines - (2*curses_screen.CMD_PAD_MARGIN),
-                                 self.ncols - (2*curses_screen.CMD_PAD_MARGIN))
-            """
+            # Don't forget about border, it takes one col/row on each side
+            
+            mrg += 1
+            
+            s_cmd = str(cmd) # transform given dict into a string
+            
+            self.cmd_pad = curses.newpad(s_cmd.count("\n") + 1,
+                                         self.ncols - (2*mrg))
+            
+            self.cmd_pad.addstr(y_margin,x_margin,s_cmd)
+            
+            self.cmd_pad.refresh(head_line, 1, mrg, mrg, self.nlines - (2*mrg),
+                                 self.ncols - (2*mrg))
 
         while True:
             key=self.stdscr.getch()
