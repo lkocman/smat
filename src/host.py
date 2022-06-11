@@ -6,7 +6,7 @@ Project Smat: System Modular Administration Tool
 File name:    host.py
 Description:  This class contain general information about hosted environment.
 
-Copyright (c) since 2009 Lubos Kocman <lkocman@redhat.com>. All rights reserved.
+Copyright (c) since 2009 Lubos Kocman <lkocman@luboskocman.com>. All rights reserved.
 
 """
 

@@ -7,7 +7,7 @@ File name:    smat.py
 Description:  The main purpose of this file is to autopick which frontend will be
               used (text or e.g. gtk).
 
-Copyright (c) since 2009 Lubos Kocman <lkocman@redhat.com>. All rights reserved.
+Copyright (c) since 2009 Lubos Kocman <lkocman@luboskocman.com>. All rights reserved.
 
 """
 

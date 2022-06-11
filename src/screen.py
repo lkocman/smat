@@ -6,7 +6,7 @@ Project Smat: System Modular Administration Tool
 File name:    screen.py
 Description:  This file contains curses frontend and the main smat class.
 
-Copyright (c) since 2009 Lubos Kocman <lkocman@redhat.com>. All rights reserved.
+Copyright (c) since 2009 Lubos Kocman <lkocman@luboskocman.com>. All rights reserved.
 
 """
 

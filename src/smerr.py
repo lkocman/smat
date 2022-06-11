@@ -6,7 +6,7 @@ Project Smat: System Modular Administration Tool
 File name:    smerr.py
 Description:  This file contains misc. error messages.
 
-Copyright (c) since 2009 Lubos Kocman <lkocman@redhat.com>. All rights reserved.
+Copyright (c) since 2009 Lubos Kocman <lkocman@luboskocman.com>. All rights reserved.
 
 """
 

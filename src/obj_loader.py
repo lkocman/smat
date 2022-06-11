@@ -6,7 +6,7 @@ Project Smat: System Modular Administration Tool
 File name:    obj_loader.py
 Description:  Simple parser for screen files.
 
-Copyright (c) since 2009 Lubos Kocman <lkocman@redhat.com>. All rights reserved.
+Copyright (c) since 2009 Lubos Kocman <lkocman@luboskocman.com>. All rights reserved.
 
 """
 
