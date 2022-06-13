@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
 """
@@ -84,7 +84,7 @@ class screen:
     def get_priority_by_cmd(self, myobj):
         """searches for the highest cmd_priority containing the same command.
         Function returns None in the case of no-match."""
-        ret_prior = None
+        ret_prior = 0
         if myobj.cmd_priority != None:
             return myobj.cmd_priority
 
@@ -113,11 +113,11 @@ class screen:
                 obj.cmd_priority = self.get_priority_by_cmd(obj)
 
             if obj.cmd_priority != None:
-                if priorities.has_key(obj.cmd_priority):
+                if obj.cmd_priority in priorities:
                     # WTH is going on here?
                     if obj.arg_priority != None and priorities[obj.cmd_priority].__contains__(obj.arg_priority):
                         raise sobj_exception(smerr.ERROR_11 % (obj.id,
-                                                               "obj.arg_priority", `obj.arg_priority`))
+                                                               "obj.arg_priority", repr(obj.arg_priority)))
 
                     priorities[obj.cmd_priority].append(obj.arg_priority)
 
@@ -203,13 +203,13 @@ screen.objects[]"""
                 elif obj.value == None:
                     continue
 
-            if not cmd.has_key(obj.get_cmd_priority()):
+            if obj.get_cmd_priority not in cmd:
                 cmd[obj.get_cmd_priority()] = [obj.get_cmd()]
 
             if obj.get_arg_priority() != None:
 
                 if obj.get_arg_priority() < 0: # -1 -2 ...
-                    if not cmd_queue.has_key(obj.get_cmd_priority()):
+                    if obj.get_cmd_priority not in cmd_queue:
                         cmd_queue[obj.get_cmd_priority()] = \
                                  [[abs(obj.get_arg_priority()),\
                                    self.substitute(obj.get_arg_format())]]
@@ -308,7 +308,7 @@ screen.objects[]"""
                             raise dependency_exception(smerr.ERROR_6 +
                                                        smerr.ERROR_6_2 % (bl))
 
-                        if not blocking.has_key(bl):
+                        if bl not in blocking:
                             blocking[bl] = [obj.id]
 
                         else:
@@ -332,7 +332,7 @@ screen.objects[]"""
         if len(dependencies) != 0:
             uniq_deps = self.__get_uniq(dependencies.values())
             for dep in uniq_deps:
-                if not self.objects.has_key(dep):
+                if dep not in self.objects:
                     raise dependency_exception(smerr.ERROR_8 % (dep, self.fpath))
 
 
@@ -347,10 +347,10 @@ screen.objects[]"""
             if self.type == screen.t_menu and sobj.type != screen_obj.t_link \
                or self.type == screen.t_selector \
                and sobj.type == screen_obj.t_link:
-                print smerr.ERROR_17
+                sys.stderr.write(smerr.ERROR_17)
                 sys.exit(17)
 
-            if self.objects.has_key(sobj.id):
+            if sobj.id in self.objects:
                 raise sobj_exception(smerr.ERROR_10 % (sobj.id))
             else:
                 """
@@ -373,8 +373,8 @@ screen.objects[]"""
                     self.objects[sobj.id] = sobj
                     self.unsorted_ids.append(sobj.id)
 
-        except sobj_exception, se:
-            print se
+        except sobj_exception as se:
+            sys.stderr.write(se)
             sys.exit(1)
 
 #-------------------------------------------------------------------------------
@@ -388,7 +388,7 @@ screen.objects[]"""
             file.close()
 
         except IOError:
-            print smerr.ERROR_7 % ( self.fpath)
+            sys.stderr.write(smerr.ERROR_7 % ( self.fpath))
             sys.exit(7)
         objr = obj_loader.obj_loader(screen_file, self.fpath)
         self.title, self.parent, self.help, self.type = objr.get_scr_info()
@@ -467,7 +467,7 @@ class screen_obj:
         self.list_separator = None # Mandatory when id = t_list
         self.arg_format = None
         self.arg_format_false = None # Boolean false
-        self.cmd_priority = None
+        self.cmd_priority = 0
         self.cmd_priority_false = None
 
         self.arg_priority = None
@@ -515,10 +515,10 @@ class screen_obj:
                 else: return str(self.value)
 
         except (TypeError, AttributeError):
-            print smerr.ERROR_9
-            print "Current setup is:\n"
-            print self.value, "With real type:", type(self.value).__name__,
-            "and defined type id:", self.type
+            sys.stderr.write(smerr.ERROR_9)
+            sys.stderr.write("Current setup is:\n")
+            sys.stderr.write(self.value, "With real type:", type(self.value).__name__,
+            "and defined type id:", self.type)
             sys.exit(9)
 
 #-------------------------------------------------------------------------------
@@ -606,8 +606,8 @@ necessary data."""
 #-------------------------------------------------------------------------------
 
 
-        except sobj_exception, se:
-            print se # This should be viewed later in the text/gtk interface
+        except sobj_exception as se:
+            sys.stderr.write(se) # This should be viewed later in the text/gtk interface
             sys.exit(2)
 
 #-------------------------------------------------------------------------------
@@ -717,7 +717,7 @@ class curses_screen:
 
         except:
             self.clear_all_screen()
-            print traceback.print_exc()
+            traceback.print_exc()
             sys.exit(18)
 
 
@@ -749,8 +749,11 @@ class curses_screen:
             
             self.cmd_pad = curses.newpad(s_cmd.count("\n") + 1,
                                          self.ncols - (2*mrg))
-            
-            self.cmd_pad.addstr(y_margin,x_margin,s_cmd)
+          
+            try: 
+                self.cmd_pad.addstr(y_margin,x_margin,s_cmd)
+            except curses.error:
+                print ("%s, %s" % (y_margin, x_margin))
             
             self.cmd_pad.refresh(head_line, 1, mrg, mrg, self.nlines - (2*mrg),
                                  self.ncols - (2*mrg))
@@ -1084,7 +1087,7 @@ class curses_screen:
         self.stdscr.keypad(0)
         curses.echo()
         curses.endwin()
-        print curses.tigetstr('sgr0')
+        print(curses.tigetstr('sgr0'))
 
 #-------------------------------------------------------------------------------
 

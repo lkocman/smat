@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
 """
@@ -55,7 +55,7 @@ class smat:
             if sys.argv[1] == "help":
                 self.print_usage()
             elif sys.argv[1] == "version":
-                print smat.VERSION
+                print(smat.VERSION)
             elif sys.argv[1] == "list":
                 self.list_fpaths()
             else:
@@ -77,7 +77,7 @@ class smat:
                 self.cur_scr.start_text_interface()
 
             elif self.mode == smat.m_gtk:
-                print smerror.ERROR_3
+                sys.stderr.write(smerror.ERROR_3)
                 sys.exit(8)
 
             else: # mode=smat.m_auto
@@ -86,7 +86,7 @@ class smat:
 #-------------------------------------------------------------------------------
 
     def print_usage(self):
-        print """This is program is a Free Software.
+        print ("""This is program is a Free Software.
 Author does not take any responsibility for it.\n\nUsage:
 	%s [ subcommand ] [fpath]
 
@@ -96,7 +96,7 @@ Author does not take any responsibility for it.\n\nUsage:
 	list    - Lists all supported fpaths.
 
 
-""" % (sys.argv[0])
+""" % (sys.argv[0]))
         sys.exit(0)
 
 #-------------------------------------------------------------------------------
@@ -106,7 +106,7 @@ Author does not take any responsibility for it.\n\nUsage:
         fpaths.sort()
 
         for fpath in fpaths:
-            print fpath
+            print (fpath)
 
         sys.exit(0)
 

@@ -63,9 +63,9 @@ class obj_loader:
             if not in_section:
                 in_section = self.section_start(line)
                 if in_section == False:
-                    print smerr.ERROR_14 % (self.fpath, self.cur_line_n,
+                    sys.stderr.write(smerr.ERROR_14 % (self.fpath, self.cur_line_n,
                                             screen.screen_obj.sot_obj,
-                                            screen.screen_obj.sot_info)
+                                            screen.screen_obj.sot_info))
                     sys.exit(14)
 
                 if in_section == screen.screen_obj.sot_obj:
@@ -111,7 +111,7 @@ class obj_loader:
                 self.__help = value
 
             else: # unknown attribute
-                print smerr.ERROR_16 % (self.fpath,self.cur_line_n,attr)
+                sys.stderr.write(smerr.ERROR_16 % (self.fpath,self.cur_line_n,attr))
                 sys.exit(16)
 
         elif in_section == screen.screen_obj.sot_obj: # scr_obj
@@ -195,7 +195,7 @@ class obj_loader:
             elif attr == screen.screen_obj.s_blocking:
                 self.objects[len(self.objects) -1].blocking = self.__get_list(value)
             else:
-                print smerr.ERROR_16 % (self.fpath,self.cur_line_n,attr)
+                sys.stderr.write(smerr.ERROR_16 % (self.fpath,self.cur_line_n,attr))
                 sys.exit(16)
 
 #-------------------------------------------------------------------------------
@@ -217,7 +217,7 @@ class obj_loader:
             return (attr,value)
 
         except ValueError:
-            print smerr.ERROR_15 % (self.fpath,self.cur_line_n)
+            sys.stderr.write(smerr.ERROR_15 % (self.fpath,self.cur_line_n))
             sys.exit(15)
 
 
